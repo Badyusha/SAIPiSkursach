@@ -289,7 +289,10 @@ form {
     width: 200px;
 }
 
-#account_dropdown {
+#account_dropdown,
+#currency_for_transfer_dropdown,
+#transfered_currency_dropdown,
+#account_number_for_transfer_dropdown {
     color: white;
     background-color: #0D1117;
     border: none;
@@ -359,7 +362,6 @@ form {
     background-color: #676CC2;
     border: none;
     border-radius: 10px;
-    margin-left: 90px;
 }
 
 #cards_table button:hover,

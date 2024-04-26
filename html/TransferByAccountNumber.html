@@ -50,7 +50,7 @@
                     </td>
 
                     <td>
-                        <input type="number" placeholder="Сумма" name="transfer_amount" id="transfer_amount"/>
+                        <input type="number" name="transfer_amount" id="transfer_amount"/>
                     </td>
                 </tr>
             </table>
@@ -72,6 +72,9 @@
             <br>
             <!-- Кнопка для открытия счета -->
             <input type="button" id="create_account" value="Открыть счет" onclick="openModal('accountModal')"/>
+            <br>
+            <!-- Кнопка для обмена валюты -->
+            <input type="button" id="change_currency" value="Обменять валюту" onclick="openModal('changeCurrency')"/>
         </form>
         
         <footer>

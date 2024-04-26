@@ -65,8 +65,59 @@
                         <option value="USD">USD</option>
                         <option value="BYN">BYN</option>
                     </select>
-                    <input id="create_button" type="submit" value="Создать"/>
+                    <input id="create_button" type="submit" value="Создать" style="margin-left: 90px;"/>
                 </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно для обмена валют -->
+        <div id="changeCurrency" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('changeCurrency')">&times;</span>
+                <h2>Обмен валют</h2>
+                <br>
+                <div style="width: 100%; text-align: center;">
+                    <table style="color: white;">
+                        <tr>
+                            <td>
+                                <select id="currency_for_transfer_dropdown">
+                                    <option value="USD">USD</option>
+                                    <option value="BYN">BYN</option>
+                                </select>
+                            </td>
+                            <td>
+                                <select id="account_number_for_transfer_dropdown">
+
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <img src="../images/change.png" height="35px" width="35px">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <select id="transfered_currency_dropdown">
+            
+                                </select>
+                            </td>
+                            <td>
+
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <h3>Сумма</h3>
+                            </td>
+                            <td>
+                                <input type="number" id="change_amount" name="change_amount"/>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                <input id="create_button" type="submit" value="Подтвердить" onsubmit="confirmChange()"/>
+                <input id="create_button" type="submit" value="Отмена" onsubmit="closeModal('changeCurrency')"/>
             </div>
         </div>
 
@@ -83,6 +134,9 @@
             <br>
             <!-- Кнопка для открытия счета -->
             <input type="button" id="create_account" value="Открыть счет" onclick="openModal('accountModal')"/>
+            <br>
+            <!-- Кнопка для обмена валюты -->
+            <input type="button" id="change_currency" value="Обменять валюту" onclick="openModal('changeCurrency')"/>
         </form>
     </div>
 

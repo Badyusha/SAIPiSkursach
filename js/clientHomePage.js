@@ -188,3 +188,11 @@ function openNewPage() {
         }
     }
 }
+
+function confirmChange() {
+
+    
+
+
+    closeModal('changeCurrency');
+}
