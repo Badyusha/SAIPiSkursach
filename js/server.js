@@ -1,0 +1,1133 @@
+const express = require('express');
+const session = require('express-session');
+const path = require('path');
+const mysql = require('mysql2');
+const { connect } = require('http2');
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+// Используем express-session middleware
+app.use(session({
+    secret: 'your_secret_key', // Секретный ключ для подписи и шифрования куки
+    resave: false, // Не сохранять сессию при каждом запросе
+    saveUninitialized: false // Не создавать сессию для новых пользователей, пока они не авторизовались
+}));
+
+// Разрешаем Express использовать данные формы
+app.use(express.urlencoded({ extended: true }));
+
+// Указываем Express использовать папки для раздачи статических файлов
+app.use(express.static(path.join(__dirname, '..', 'html')));
+app.use(express.static(path.join(__dirname, '..', 'css')));
+app.use(express.static(path.join(__dirname, '..', 'js')));
+app.use(express.static(path.join(__dirname, '..', 'images')));
+
+
+// Указываем Express правильные типы MIME для файлов CSS и JavaScript
+app.use('/css', express.static(path.join(__dirname, '..', 'css'), { 'Content-Type': 'text/css' }));
+app.use('/js', express.static(path.join(__dirname, '..', 'js'), { 'Content-Type': 'application/javascript' }));
+app.use('/images', express.static(path.join(__dirname, '..', 'images'), { 'Content-Type': 'image/png' }));
+
+
+
+
+// Функция для регистрации пользователя в базе данных
+function registerUser(first_name, last_name, birth_date, username, password) {
+    // Создаем соединение с базой данных
+    const connection = mysql.createConnection({
+        host: 'localhost', // Хост базы данных
+        user: 'root', // Имя пользователя
+        password: 'root', // Пароль пользователя
+        database: 'saipis' // Название базы данных
+    });
+
+    // Проверка соединения
+    connection.connect((err) => {
+        if (err) {
+            console.error('Ошибка подключения к базе данных:', err);
+            return;
+        }
+        console.log('Подключение к базе данных успешно!');
+    });
+
+    const new_user = {
+        username: username,
+        password: password,
+        role: 'client'
+    };
+
+    // Пример выполнения запроса к базе данных для добавления пользователя
+    connection.query('INSERT INTO user SET ?', new_user, (err, result) => {
+        if (err) {
+            console.error('Ошибка выполнения запроса:', err);
+            return false;
+        }
+        console.log('Добавлена новая запись в таблицу "user":', result);
+        
+        // Получаем идентификатор только что добавленного пользователя
+        const user_id = result.insertId;
+        
+        const new_client = {
+            user_id: user_id,
+            first_name: first_name,
+            last_name: last_name,
+            birth_date: birth_date,
+        };
+
+        // Пример выполнения запроса к базе данных для добавления клиента
+        connection.query('INSERT INTO Client SET ?', new_client, (err, result) => {
+            if (err) {
+                console.error('Ошибка выполнения запроса:', err);
+                return false;
+            }
+            console.log('Добавлена новая запись в таблицу "Client":', result);
+
+            // Закрываем соединение после завершения работы
+            connection.end();
+        });
+    });
+    return true;
+}
+
+function loginUser(username, password) {
+    return new Promise((resolve, reject) => {
+        // Создаем соединение с базой данных
+        const connection = mysql.createConnection({
+            host: 'localhost',
+            user: 'root',
+            password: 'root',
+            database: 'saipis'
+        });
+
+        // Проверка соединения
+        connection.connect((err) => {
+            if (err) {
+                console.error('Ошибка подключения к базе данных:', err);
+                reject(err);
+                return;
+            }
+            console.log('Подключение к базе данных успешно!');
+        });
+
+        connection.query('SELECT 1 FROM user WHERE username = ? AND password = ?', [username, password], (err, result) => {
+            if (err) {
+                console.error('Ошибка выполнения запроса:', err);
+                reject(err);
+                return;
+            }
+            // Если найден пользователь с такими учетными данными, возвращаем true, иначе false
+            resolve(result.length > 0);
+        });
+    });
+}
+
+
+
+
+
+// Маршрут для отображения страниц
+app.get('/SignIn', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'html', 'SignIn.html'));
+});
+
+app.get('/SignUp', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'html', 'SignUp.html'));
+});
+
+// Обработчик GET запроса для страницы ClientHomePage
+app.get('/ClientHomePage', (req, res) => {
+    // Проверяем, авторизован ли пользователь
+    if (req.session.username) {
+        // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
+        res.sendFile(path.join(__dirname, '..', 'html', 'ClientHomePage.html'));
+    } else {
+        // Если пользователь не авторизован, перенаправляем на страницу входа
+        res.redirect('/SignIn');
+    }
+});
+
+// Обработчик GET запроса для новой страницы с динамическими параметрами
+app.get('/TransferToBankClient', (req, res) => {
+    // Проверяем, авторизован ли пользователь
+    if (req.session.username) {
+        // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
+        res.sendFile(path.join(__dirname, '..', 'html', 'TransferToBankClient.html'));
+    } else {
+        // Если пользователь не авторизован, перенаправляем на страницу входа
+        res.redirect('/SignIn');
+    }
+});
+
+app.get('/TransferByAccountNumber', (req, res) => {
+    // Проверяем, авторизован ли пользователь
+    if (req.session.username) {
+        // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
+        // res.sendFile(path.join(__dirname, '..', 'html', '.html'));
+        res.sendFile(path.join(__dirname, '..', 'html', 'TransferByAccountNumber.html'));
+    } else {
+        // Если пользователь не авторизован, перенаправляем на страницу входа
+        res.redirect('/SignIn');
+    }
+});
+
+app.get('/BankingTransfer', (req, res) => {
+    // Проверяем, авторизован ли пользователь
+    if (req.session.username) {
+        // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
+        res.sendFile(path.join(__dirname, '..', 'html', 'BankingTransfer.html'));
+    } else {
+        // Если пользователь не авторизован, перенаправляем на страницу входа
+        res.redirect('/SignIn');
+    }
+});
+
+
+
+
+// Обработчик GET запроса для получения логина пользователя
+app.get('/getUsername', (req, res) => {
+    // Отправляем логин пользователя клиенту
+    res.send(req.session.username);
+});
+
+// Создаем соединение с базой данных
+const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'root',
+    database: 'saipis'
+});
+
+app.get('/getClientAccounts', (req, res) => {
+    const username = req.query.username;
+    // Выполняем запрос к базе данных
+    connection.query(
+        `select account.number as account_number
+        from account
+        inner join user on
+        user.id = account.user_id
+        where user.username = ?`,
+        [username],
+        (error, results, fields) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+            
+            // Отправляем результаты клиенту
+            res.send(results);
+            // console.log(results);
+        }
+    );
+});
+
+app.get('/getCommssionRule', (req, res) => {
+    // Выполняем запрос к базе данных
+    connection.query(
+        `select commission_rule.percent, commission_rule.from_amount, commission_rule.to_amount, currency.currency
+        from currency
+        inner join account on
+        account.currency_id = currency.id
+        inner join commission_rule on
+        commission_rule.currency_id = currency.id
+        where account.number = ? and commission_rule.type = ?;`,
+        [req.query.account_number, req.query.commission_type],
+        (error, results) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+            
+            // Отправляем результаты клиенту
+            res.send(results);
+            // console.log(results);
+        }
+    );
+});
+
+// Маршрут для обработки запросов на /getClientData
+app.get('/getClientData', (req, res) => {
+    // Получаем имя пользователя из запроса
+    const username = req.query.username;
+
+    // Выполняем запрос к базе данных
+    connection.query(
+        `SELECT account.number AS account_number, account.balance, currency.currency
+         FROM account
+         INNER JOIN currency ON account.currency_id = currency.id
+         INNER JOIN user ON user.id = account.user_id
+         WHERE user.username = ?`,
+        [username],
+        (error, results, fields) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+            
+            // Отправляем результаты клиенту
+            res.send(results);
+            // console.log(results);
+        }
+    );
+});
+
+app.get('/getBankingName', (req, res) => {
+    // Выполняем запрос к базе данных
+    connection.query(
+        `select banking_service.name
+        from banking_service
+        where banking_service.id = ?`,
+        [req.query.banking_id],
+        (error, results) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+
+            if (results.length === 0) {
+                console.error('Услуги с указанным кодом не найдено!');
+                res.status(500).send('Услуги с указанным кодом не найдено!');
+                return;
+            }
+
+            // Отправляем результаты клиенту
+            res.send(results[0].name);
+            // console.log(results);
+        }
+    );
+});
+
+app.get('/getClientCardsInfo', (req, res) => {
+    // Получаем имя пользователя из запроса
+    const username = req.query.username;
+
+    // Выполняем запрос к базе данных
+    connection.query(
+        `select card.id as card_id, card.number as card_number, account.balance, currency.currency
+        from card
+        inner join account on
+        account.id = card.account_id
+        inner join currency on
+        currency.id = account.currency_id
+        inner join user on user.id = account.user_id
+        where user.username = ?`,
+        [username],
+        (error, results) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+            
+            // Отправляем результаты клиенту
+            res.send(results);
+            // console.log(results);
+        }
+    );
+});
+
+//////////////////////////
+// functions to get data from database
+/////////////////////////
+async function getUserAccountIdByAccountNumber(account_number) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `SELECT account.id
+            FROM account
+            WHERE account.number = ?`,
+            [account_number],
+            (error, result) => {
+                if (error || result.length === 0) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(null);
+                } else {
+                    resolve(result[0].id);
+                }
+            }
+        );
+    });
+}
+
+function getUserAccountIdByFullNameCurrencyId(last_name, first_name, middle_name, currency_id) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `SELECT account.id
+            FROM account
+            INNER JOIN client ON client.user_id = account.user_id
+            WHERE client.last_name = ? AND client.first_name = ? AND client.middle_name = ? AND account.currency_id = ?;`,
+            [last_name, first_name, middle_name, currency_id],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                } else {
+                    resolve(result.length === 0 ? null : result[0].id);
+                    // resolve(result[0].id);
+                }
+            }
+        );
+    });
+}
+
+async function getAccountBalanceByAccountId(account_id) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `select account.balance
+            from account
+            where account.id = ?;`,
+            [account_id],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(result[0].balance);
+                    return;
+                } 
+                resolve(null);
+                return;
+            }
+        );
+    });
+}
+
+async function clientExistsByFullName(last_name, first_name, middle_name) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `SELECT 1
+            FROM client
+            WHERE client.last_name = ? AND client.first_name = ? AND client.middle_name = ?;`,
+            [last_name, first_name, middle_name],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                    return;
+                } 
+                resolve(result.length === 0 ? false : true);
+                return;
+            }
+        );
+    });
+}
+
+async function createPayment(commission_amount, debited_amount, credited_amount, status, currency_id,
+                             sender_account_id, recipient_account_id, sender_account_balance,
+                             recipient_account_balance, payment_option)
+{
+    return new Promise((resolve, reject) => {
+        const currentDate = new Date();
+        const formattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
+        connection.query(
+            `INSERT INTO
+            payment(commission_amount, debited_amount, credited_amount, status,
+                    currency_id, start_date, sender_account_id, recipient_account_id,
+                    sender_account_balance_before, recipient_account_balance_before, payment_option)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [commission_amount, debited_amount, credited_amount, status, currency_id,
+             formattedDate, sender_account_id, recipient_account_id,
+             sender_account_balance, recipient_account_balance, payment_option],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                } else {
+                    resolve(result.insertId);
+                }
+            }
+        );
+    });
+}
+
+function getUserBalanceByAccountIdCurrencyId(account_id, currency_id) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `SELECT account.balance
+            FROM account
+            INNER JOIN currency ON currency.id = ?
+            WHERE account.id = ?;`,
+            [currency_id, account_id],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                } else {
+                    if (result.length > 0) {
+                        resolve(result[0].balance);
+                    } else {
+                        resolve(0); // Если счет не найден, возвращаем 0
+                    }
+                }
+            }
+        );
+    });
+}
+
+function getUserBalanceByUserAccountIdCurrencyId(sender_account_id, currency_id) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `SELECT account.balance
+            FROM account
+            WHERE account.id = ? AND account.currency_id = ?;`,
+            [sender_account_id, currency_id],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                } else {
+                    if (result.length > 0) {
+                        resolve(result[0].balance);
+                    } else {
+                        resolve(null); // Если счет не найден, возвращаем 0
+                    }
+                }
+            }
+        );
+    });
+}
+
+async function getCurrencyIdByCurrencyName(currency) {
+    console.log(currency);
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `select currency.id as currency_id
+            from currency
+            where currency.currency = ?`,
+            [currency],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                    console.log('error');
+                } else {
+                    console.log(result[0]);
+                    resolve(result[0] ? result[0].currency_id : null);
+                }
+            }
+        );
+    });
+}
+
+function createTransaction(payment_id, status) {
+    return new Promise((resolve, reject) => {
+        // Get the current date and time
+        const currentDate = new Date(); 
+
+        // Format the date to YYYY-MM-DD HH:MM:SS format
+        const formatted_currenct_date = currentDate.toISOString().slice(0, 19).replace('T', ' ');
+
+        connection.query(
+            `INSERT INTO transaction(payment_id, status, start_date)
+            VALUES(?, ?, ?);`,
+            [payment_id, status, formatted_currenct_date],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                } else {
+                    resolve(result.insertId);
+                }
+            }
+        );
+    });
+}
+
+async function setPaymentStatus(payment_id, status) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `update payment
+            set payment.status = ?
+            where payment.id = ?;`,
+            [status, payment_id],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                } else {
+                    resolve(result.id); // Assuming you want to resolve with the query result
+                }
+            }
+        );
+    });
+}
+
+async function setTransactionStatus(transaction_id, status) {
+    try {
+        // Get the current date and time
+        const currentDate = new Date(); 
+
+        // Format the date to YYYY-MM-DD HH:MM:SS format
+        const formatted_currenct_date = currentDate.toISOString().slice(0, 19).replace('T', ' ');
+
+        await new Promise((resolve, reject) => {
+            connection.query(
+                `UPDATE transaction
+                SET transaction.status = ?, transaction.end_date = ?
+                WHERE transaction.id = ?;`,
+                [status, formatted_currenct_date, transaction_id],
+                (error, result) => {
+                    if (error) {
+                        console.error('Ошибка выполнения запроса:', error);
+                        reject(error);
+                    } else {
+                        resolve(result);
+                    }
+                }
+            );
+        });
+    } catch (error) {
+        console.error('Ошибка при установке статуса транзакции:', error);
+        throw error;
+    }
+}
+
+async function transferMoney(transfer_amount, commission, recipient_account_id, sender_account_id, recipient_account_balance, sender_account_balance) {
+    try {
+        // Вычисляем новые значения балансов
+        let updatedSenderBalance = sender_account_balance - transfer_amount - commission;
+        let updatedRecipientBalance = recipient_account_balance + transfer_amount;
+
+        // Обновляем баланс получателя
+        await updateAccountBalance(updatedRecipientBalance, recipient_account_id);
+
+        // Обновляем баланс отправителя
+        await updateAccountBalance(updatedSenderBalance, sender_account_id);
+
+        return { updatedRecipientBalance, updatedSenderBalance };
+    } catch (error) {
+        console.error('Ошибка при переводе средств:', error);
+        return null;
+    }
+}
+
+async function updateAccountBalance(newBalance, accountId) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `UPDATE account
+            SET account.balance = ?
+            WHERE account.id = ?;`,
+            [newBalance, accountId],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка при обновлении баланса счета:', error);
+                    reject(error);
+                } else {
+                    resolve(result);
+                }
+            }
+        );
+    });
+}
+
+async function getSenderAccountBalanceBeforeFailByPaymentId(payment_id) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `select payment.sender_account_balance_before
+            from payment
+            where payment.id = ?;`,
+            [payment_id],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка при обновлении баланса счета:', error);
+                    reject(error);
+                } else {
+                    resolve(result[0].sender_account_balance_before);
+                }
+            }
+        );
+    });
+}
+
+async function getRecipientAccountBalanceBeforeFailByAccountId(payment_id) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `select payment.recipient_account_balance_before
+            from payment
+            where payment.id = ?;`,
+            [payment_id],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка при обновлении баланса счета:', error);
+                    reject(error);
+                } else {
+                    resolve(result[0].recipient_account_balance_before);
+                }
+            }
+        );
+    });
+}
+
+async function setClientAccountBalanceByAccountId(account_balance, account_id) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `UPDATE account
+            SET account.balance = ?
+            WHERE account.id = ?;`,
+            [account_balance, account_id],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка при обновлении баланса счета:', error);
+                    reject(error);
+                } else {
+                    resolve(result);
+                }
+            }
+        );
+    });
+}
+
+async function clientExistsByAccountNumber(account_number) {    
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `select 1
+            from account
+            where account.number = ?;`,
+            [account_number],
+            (error, result) => {
+                if (error) {
+                    console.error('Нет такого клиента:', error);
+                    reject(error);
+                    return;
+                }
+                resolve (result.length === 0 ? false : true);
+                return;
+            }
+        );
+    });
+}
+
+async function getUserAccountIdByAccountNumberCurrencyId(account_number, currency_id) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `select account.id
+            from account
+            inner join currency on
+            currency.id = account.currency_id
+            where account.number = ? and currency.id = ?`,
+            [account_number, currency_id],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка при обновлении баланса счета:', error);
+                    reject(error);
+                    return;
+                }
+                resolve(result[0] ? result[0].id : null); // Handle empty result
+            }
+        );
+    });
+}
+
+async function operationExistsByOperationCode(operation_code) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `select 1
+            from banking_service
+            where banking_service.id = ?`,
+            [operation_code],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка при обновлении баланса счета:', error);
+                    reject(error);
+                    return false;
+                }
+                resolve(result.length !== 0 ? true : false); // Handle empty result
+            }
+        );
+    });
+}
+
+async function createPaymentForBankingService(commission, transfer_amount, credited_amount,
+                                            status, currency_id, sender_account_id, recipient_account_id,
+                                            sender_account_balance, payment_option)
+{
+    return new Promise((resolve, reject) => {
+        const currentDate = new Date();
+        const formattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
+        connection.query(
+            `INSERT INTO
+            payment(commission_amount, debited_amount, credited_amount, status,
+                    currency_id, start_date, sender_account_id, recipient_account_id,
+                    sender_account_balance_before, payment_option)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [commission, transfer_amount, credited_amount, status, currency_id,
+             formattedDate, sender_account_id, recipient_account_id,
+             sender_account_balance, payment_option],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                } else {
+                    resolve(result.insertId);
+                }
+            }
+        );
+    });
+}
+
+/////////////////////////
+
+
+app.post('/TransferToBankClient', async (req, res) => {
+    try {
+        let commission = parseFloat(req.body.commission);
+        let transfer_amount = parseFloat(req.body.transfer_amount);
+        let sender_account_number = req.body.sender_account_number;
+        let currency_id = await getCurrencyIdByCurrencyName(req.body.currency);
+
+        if (currency_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        
+        let sender_account_id = await getUserAccountIdByAccountNumber(sender_account_number);
+
+        if (sender_account_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        let fullname = req.body.reciever_name.split(' ');
+
+        let last_name = fullname[0];
+        let first_name = fullname[1];
+        let middle_name = fullname[2];
+
+        if(await clientExistsByFullName(last_name, first_name, middle_name) === false) {
+            res.send("Пользователь с таким именем не найден!");
+            return;
+        };
+        
+        let recipient_account_id = await getUserAccountIdByFullNameCurrencyId(last_name, first_name, middle_name, currency_id);
+        
+        // check if recipient has an account with sender's currency
+        if (recipient_account_id === null) {
+            res.send("У получателя нет счета для отправляемой валюты!");
+            return;
+        }
+
+
+        let sender_account_balance = parseFloat(await getUserBalanceByUserAccountIdCurrencyId(sender_account_id, currency_id));
+
+        if (sender_account_balance === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        // check if there are insufficient funds in the sender's account
+        if (sender_account_balance < (transfer_amount + commission)) {
+            res.send('На вашем балансе недостаточно средств');
+            return;
+        }
+
+
+        let recipient_account_balance = parseFloat(await getUserBalanceByAccountIdCurrencyId(recipient_account_id, currency_id));
+
+        if (recipient_account_balance === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+
+        let payment_id = await createPayment(commission, transfer_amount, transfer_amount + commission,
+                                            'started', currency_id, sender_account_id, recipient_account_id,
+                                            sender_account_balance, recipient_account_balance, 'bank_client');
+
+        if (payment_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+
+            await setPaymentStatus(payment_id, 'failed');
+            return;
+        }
+
+
+        let transaction_id = await createTransaction(payment_id, 'started');
+
+        if (transaction_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+
+            await setPaymentStatus(payment_id, 'failed');
+            await setTransactionStatus(transaction_id, 'failed');
+            return;
+        }
+
+
+        if(await transferMoney(transfer_amount, commission, recipient_account_id, sender_account_id, recipient_account_balance, sender_account_balance) !== null) {
+            await setPaymentStatus(payment_id, 'successful');
+            await setTransactionStatus(transaction_id, 'successful');
+
+            res.send("Средства успешно отправлены!");    
+            return;
+        }
+
+        let sender_account_balance_before = parseFloat(await getSenderAccountBalanceBeforeFailByPaymentId(payment_id));
+        let recipient_account_balance_before = parseFloat(await getRecipientAccountBalanceBeforeFailByAccountId(payment_id));
+
+        await setClientAccountBalanceByAccountId(sender_account_balance_before, sender_account_id);
+        await setClientAccountBalanceByAccountId(recipient_account_balance_before, recipient_account_id);
+
+        await setPaymentStatus(payment_id, 'failed');
+        await setTransactionStatus(transaction_id, 'failed');
+
+        res.send("Не получилось перевести средства");
+    } catch (error) {
+        let sender_account_balance_before = parseFloat(await getSenderAccountBalanceBeforeFailByPaymentId(payment_id));
+        let recipient_account_balance_before = parseFloat(await getRecipientAccountBalanceBeforeFailByAccountId(payment_id));
+
+        await setClientAccountBalanceByAccountId(sender_account_balance_before, sender_account_id);
+        await setClientAccountBalanceByAccountId(recipient_account_balance_before, recipient_account_id);
+
+        await setPaymentStatus(payment_id, 'failed');
+        await setTransactionStatus(transaction_id, 'failed');
+
+        console.error('Ошибка:', error);
+        res.send("Произошла ошибка при выполнении операции!");
+    }
+});
+
+app.post('/TransferByAccountNumber', async (req, res) => {
+    try {
+        let reciever_account_number = req.body.reciever_account_number;
+        let sender_account_number = req.body.sender_account_number;
+        let commission = parseFloat(req.body.commission);
+        let transfer_amount = parseFloat(req.body.transfer_amount);
+        let currency_id = await getCurrencyIdByCurrencyName(req.body.currency);
+
+        if (currency_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        
+        let sender_account_id = await getUserAccountIdByAccountNumber(sender_account_number);
+
+        if (sender_account_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        if ((await clientExistsByAccountNumber(reciever_account_number)) === false) {
+            res.send("Пользователь с таким счетом не найден!");
+            return;
+        }
+        
+        let recipient_account_id = await getUserAccountIdByAccountNumberCurrencyId(reciever_account_number, currency_id);
+
+        // check if recipient has an account with sender's currency
+        if (recipient_account_id === null) {
+            res.send("У получателя нет счета для отправляемой валюты!");
+            return;
+        }
+
+
+        let sender_account_balance = parseFloat(await getUserBalanceByUserAccountIdCurrencyId(sender_account_id, currency_id));
+
+        if (sender_account_balance === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        // check if there are insufficient funds in the sender's account
+        if (sender_account_balance < (transfer_amount + commission)) {
+            res.send('На вашем балансе недостаточно средств');
+            return;
+        }
+
+
+        let recipient_account_balance = parseFloat(await getUserBalanceByAccountIdCurrencyId(recipient_account_id, currency_id));
+
+        if (recipient_account_balance === 0) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+
+        let payment_id = await createPayment(commission, transfer_amount, transfer_amount + commission,
+                                            'started', currency_id, sender_account_id, recipient_account_id,
+                                            sender_account_balance, recipient_account_balance, 'account_number');
+
+        if (payment_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+
+            await setPaymentStatus(payment_id, 'failed');
+            return;
+        }
+
+
+        let transaction_id = await createTransaction(payment_id, 'started');
+
+        if (transaction_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+
+            await setPaymentStatus(payment_id, 'failed');
+            await setTransactionStatus(transaction_id, 'failed');
+            return;
+        }
+
+
+        if(await transferMoney(transfer_amount, commission, recipient_account_id, sender_account_id, recipient_account_balance, sender_account_balance) !== null) {
+            await setPaymentStatus(payment_id, 'successful');
+            await setTransactionStatus(transaction_id, 'successful');
+
+            res.send("Средства успешно отправлены!");    
+            return;
+        }
+
+        let sender_account_balance_before = parseFloat(await getSenderAccountBalanceBeforeFailByPaymentId(payment_id));
+        let recipient_account_balance_before = parseFloat(await getRecipientAccountBalanceBeforeFailByAccountId(payment_id));
+
+        await setClientAccountBalanceByAccountId(sender_account_balance_before, sender_account_id);
+        await setClientAccountBalanceByAccountId(recipient_account_balance_before, recipient_account_id);
+
+        await setPaymentStatus(payment_id, 'failed');
+        await setTransactionStatus(transaction_id, 'failed');
+
+        res.send("Не получилось перевести средства");
+    } catch (error) {
+        let sender_account_balance_before = parseFloat(await getSenderAccountBalanceBeforeFailByPaymentId(payment_id));
+        let recipient_account_balance_before = parseFloat(await getRecipientAccountBalanceBeforeFailByAccountId(payment_id));
+
+        await setClientAccountBalanceByAccountId(sender_account_balance_before, sender_account_id);
+        await setClientAccountBalanceByAccountId(recipient_account_balance_before, recipient_account_id);
+
+        await setPaymentStatus(payment_id, 'failed');
+        await setTransactionStatus(transaction_id, 'failed');
+
+        console.error('Ошибка:', error);
+        res.send("Произошла ошибка при выполнении операции!");
+    }
+});
+
+app.post('/BankingTransfer', async (req, res) => {
+    try {
+        let operation_code = parseFloat(req.body.operation_code);
+        let sender_account_number = req.body.sender_account_number;
+        let commission = parseFloat(req.body.commission);
+        let transfer_amount = parseFloat(req.body.transfer_amount);
+        let currency_id = await getCurrencyIdByCurrencyName(req.body.currency);
+
+        
+        if (currency_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+        
+        let sender_account_id = await getUserAccountIdByAccountNumber(sender_account_number);
+
+        if (sender_account_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        if (!(await operationExistsByOperationCode(operation_code))) {
+            res.send("Такой операции не существует!");
+            return;
+        }
+
+        let sender_account_balance = parseFloat(await getUserBalanceByUserAccountIdCurrencyId(sender_account_id, currency_id));
+
+        if (sender_account_balance === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        // check if there are insufficient funds in the sender's account
+        if (sender_account_balance < (transfer_amount + commission)) {
+            res.send('На вашем балансе недостаточно средств');
+            return;
+        }
+
+        // Define variables for payment_id and transaction_id
+        let payment_id, transaction_id;
+
+        // Create payment
+        try {
+            payment_id = await createPaymentForBankingService(commission, transfer_amount, transfer_amount + commission,
+                                            'started', currency_id, sender_account_id, operation_code,
+                                            sender_account_balance, 'banking');
+        } catch (paymentError) {
+            console.error('Ошибка создания платежа:', paymentError);
+            res.send("Ошибка при обращении к базе данных!");
+
+            // Handle payment failure
+            await setPaymentStatus(payment_id, 'failed');
+            return;
+        }
+
+        // Create transaction
+        try {
+            transaction_id = await createTransaction(payment_id, 'started');
+        } catch (transactionError) {
+            console.error('Ошибка создания транзакции:', transactionError);
+            res.send("Ошибка при обращении к базе данных!");
+
+            // Handle transaction failure
+            await setPaymentStatus(payment_id, 'failed');
+            await setTransactionStatus(transaction_id, 'failed');
+            return;
+        }
+
+        let updatedSenderBalance = sender_account_balance - transfer_amount - commission;
+
+        // Обновляем баланс отправителя
+        await updateAccountBalance(updatedSenderBalance, sender_account_id);
+        
+        // Set payment and transaction statuses to 'successful'
+        await setPaymentStatus(payment_id, 'successful');
+        await setTransactionStatus(transaction_id, 'successful');
+        
+        res.send("Средства успешно отправлены!");    
+    } catch (error) {
+        // Handle errors
+        let sender_account_balance_before = parseFloat(await getSenderAccountBalanceBeforeFailByPaymentId(payment_id));
+        await setClientAccountBalanceByAccountId(sender_account_balance_before, sender_account_id);
+        
+        await setPaymentStatus(payment_id, 'failed');
+        await setTransactionStatus(transaction_id, 'failed');
+
+        console.error('Ошибка:', error);
+        res.send("Произошла ошибка при выполнении операции!");
+    }
+});
+
+
+
+
+
+
+// Обработчик POST запроса для входа пользователя
+app.post('/SignIn', async (req, res) => {
+    const { username, password } = req.body;
+
+    try {
+        const loginResult = await loginUser(username, password);
+        
+        if (loginResult) {
+            console.log('Успешный вход. Перенаправление на ClientHomePage...');
+            
+            // Сохраняем логин пользователя в сессии
+            req.session.username = username;
+
+            // Перенаправляем пользователя на страницу ClientHomePage
+            res.redirect('/ClientHomePage');
+        } else {
+            console.log('Неверное имя пользователя или пароль.');
+            res.status(400).send('Неверное имя пользователя или пароль');
+        }
+    } catch (error) {
+        console.error('Ошибка при входе пользователя:', error);
+        res.status(500).send('Произошла ошибка при входе пользователя');
+    }
+});
+
+
+
+
+
+// Запускаем сервер
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});

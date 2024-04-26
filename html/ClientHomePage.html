@@ -1,0 +1,96 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sigma-bank</title>
+
+    <link href="../css/style.css" type="text/css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="../js/clientHomePage.js" type="text/javascript"></script>
+    <script src="../js/server.js" type="text/javascript"></script>
+</head>
+<body>
+    <header>
+        <img src="../images/btc-icon.webp">
+        <h2>SIGMA-BANK</h2>
+    </header>
+
+    <div id="menu">
+        <form id="account_balance">
+            <div id="account">
+                <table id="account_balance_table">
+                    <th>
+                        <h1>Счет</h1>
+                    </th>
+                    <th>
+                        <h1>Баланс</h1>
+                    </th>
+                </table>
+            </div>
+        </form>
+
+        <form id="cards">
+            <table id="cards_table"> 
+
+            </table>
+        </form>
+
+        <!-- Модальное окно для перевода -->
+        <div id="transferModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('transferModal')">&times;</span>
+                <h2>Перевод</h2>
+                <br>
+                <div>
+                    <select id="transfer_dropdown">
+                        <option value="transferToBankClient">Перевод клиенту банка</option>
+                        <option value="transferByAccountNumber">Перевод по номеру счета</option>
+                        <option value="banking">Банкинг</option>
+                    </select>
+
+                    <input id="continue_button" type="submit" value="Продолжить" onclick="openNewPage()"/>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно для открытия счета -->
+        <div id="accountModal" class="modal">
+            <div class="modal-content">
+                <span class="close" onclick="closeModal('accountModal')">&times;</span>
+                <h2>Создание счета</h2>
+                <br>
+                <div>
+                    <select id="account_dropdown">
+                        <option value="USD">USD</option>
+                        <option value="BYN">BYN</option>
+                    </select>
+                    <input id="create_button" type="submit" value="Создать"/>
+                </div>
+            </div>
+        </div>
+
+        <!-- Форма с кнопками -->
+        <form id="personal">
+            <div id="username">:(</div>
+            <br>
+            <a href="/ClientHomePage">
+                <img src="../images/home.png" width="50px" height="50px">
+            </a>
+            <br>
+            <!-- Кнопка для перевода -->
+            <input type="button" id="transfer" value="Перевод" onclick="openModal('transferModal')"/>
+            <br>
+            <!-- Кнопка для открытия счета -->
+            <input type="button" id="create_account" value="Открыть счет" onclick="openModal('accountModal')"/>
+        </form>
+    </div>
+
+
+    <footer>
+        <a href="https://github.com/Badyusha">
+            <img src="../images/github.png" height="35px" width="35px">
+        </a>
+    </footer>    
+</body>
+</html>

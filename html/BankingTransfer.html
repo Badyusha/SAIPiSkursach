@@ -1,0 +1,146 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sigma-bank</title>
+
+    <link href="../css/style.css" type="text/css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="../js/bankingTransfer.js" type="text/javascript"></script>
+    <script src="../js/server.js" type="text/javascript"></script>
+</head>
+<body>
+    <header>
+        <img src="../images/btc-icon.webp">
+        <h2>SIGMA-BANK</h2>
+    </header>
+
+    
+    <div id="menu">
+        <form id="transfer_form">
+            <h2>
+                Банкинг (перевод по коду операции)
+            </h2>
+            <table style="color:white; margin-left: 500px; margin-top: 70px; margin-bottom: 70px;">
+                <tr>
+                    <td>
+                        <h3>Со счета</h3>
+                    </td>
+
+                    <td>
+                        <select id="select_card_number">
+                        </select>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <h3>Код операции</h3>
+                    </td>
+
+                    <td>
+                        <input type="text" placeholder="Код операции" name="operation_code" id="operation_code"/>
+                    </td>
+                </tr>
+
+                <tr>
+                    <td>
+                        <h3>Сумма</h3>
+                    </td>
+
+                    <td>
+                        <input type="number" placeholder="Сумма" name="transfer_amount" id="transfer_amount"/>
+                    </td>
+                </tr>
+            </table>
+
+            <input type="button" id="transfer_submit_button" value="Подтвердить" onclick="openModal('confirmModal')"/>
+        </form>
+
+        <!-- Форма с кнопками -->
+        <form id="personal">
+            <div id="username">:(</div>
+            <br>
+            <a href="/ClientHomePage">
+                <img src="../images/home.png" width="50px" height="50px">
+            </a>
+            <br>
+            <!-- Кнопка для перевода -->
+            <input type="button" id="transfer" value="Перевод" onclick="openModal('transferModal')"/>
+            <br>
+            <!-- Кнопка для открытия счета -->
+            <input type="button" id="create_account" value="Открыть счет" onclick="openModal('accountModal')"/>
+        </form>
+        
+        <footer>
+            <a href="https://github.com/Badyusha">
+                <img src="../images/github.png" height="35px" width="35px">
+            </a>
+        </footer>
+
+    </div>
+        
+   <!---------------------->
+        <!-- МОДАЛКИ -->
+    <!---------------------->
+
+    <!-- Модальное окно для перевода -->
+    <div id="transferModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('transferModal')">&times;</span>
+            <h2>Перевод</h2>
+            <br>
+            <div>
+                <select id="transfer_dropdown">
+                    <option value="transferToBankClient">Перевод клиенту банка</option>
+                    <option value="transferByAccountNumber">Перевод по номеру счета</option>
+                    <option value="banking">Банкинг</option>
+                </select>
+                <input id="continue_button" type="submit" value="Продолжить" onclick="openNewPage()"/>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для открытия счета -->
+    <div id="accountModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('accountModal')">&times;</span>
+            <h2>Создание счета</h2>
+            <br>
+            <div>
+                <select id="account_dropdown">
+                    <option value="USD">USD</option>
+                    <option value="BYN">BYN</option>
+                </select>
+                <input id="create_button" type="submit" value="Создать"/>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно для подтверждения -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" onclick="closeModal('confirmModal')">&times;</span>
+            <h2>Подтверждение</h2>
+            <h3 id="commission_message"></h3>
+            <br>
+            <h3 id="banking_name"></h3>
+            <br>
+            <h3 id="total_amount"></h3>
+            <input type="button" value="Подтвердить" id="confirm_transfer_button" onclick="confirmTransfer()"/>
+            <input type="button" value="Отмена" onclick="closeModal('confirmModal')"/>
+        </div>
+    </div>
+
+    <!-- Модальное окно для подтверждения -->
+    <div id="successModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" onclick="closeModal('successModal')">&times;</span>
+            <h2>Состояние перевода</h2>
+            <h3 id="transfer_condition"></h3>
+        </div>
+    </div>
+
+</body>
+</html>
