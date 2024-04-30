@@ -248,6 +248,63 @@ app.get('/getCommssionRule', (req, res) => {
     );
 });
 
+app.get('/getAccountNumberWithCurrencies', (req, res) => {
+    // Выполняем запрос к базе данных
+    connection.query(
+        `select account.number as account_number, currency.currency
+        from account
+        inner join currency on
+        account.currency_id = currency.id
+        inner join user on
+        user.id = account.user_id
+        where user.username = ?;`,
+        [req.session.username],
+        (error, results) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+            
+            // Отправляем результаты клиенту
+            res.send(results);
+            // console.log(results);
+        }
+    );
+});
+
+app.get('/confirmChangingCurrency', (req, res) => {
+    let BYNUSD_rate = 3.1;
+    let currency = req.query.to_currency;
+    let amount = parseFloat(req.query.amount);
+
+    connection.query(
+        `select commission_rule.percent
+        from commission_rule
+        inner join currency on
+        currency.id = commission_rule.currency_id
+        where currency.currency = ? and commission_rule.type = 'change_currency' and commission_rule.from_amount <= ? and commission_rule.to_amount >= ?;`,
+        [currency, req.query.amount, amount],
+        (error, result) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+
+            let total_amount;
+            let percent = parseFloat(result[0].percent);
+            (currency === 'USD') ?
+                                total_amount = ((amount / BYNUSD_rate) * (1 - (percent / 100))).toFixed(2)
+                                :
+                                total_amount = ((amount * BYNUSD_rate) * (1 - (percent / 100))).toFixed(2); 
+
+            res.send([percent, BYNUSD_rate, total_amount]);
+        }
+    );
+});
+
+
 // Маршрут для обработки запросов на /getClientData
 app.get('/getClientData', (req, res) => {
     // Получаем имя пользователя из запроса
@@ -466,13 +523,13 @@ function getUserBalanceByAccountIdCurrencyId(account_id, currency_id) {
     });
 }
 
-function getUserBalanceByUserAccountIdCurrencyId(sender_account_id, currency_id) {
+function getUserBalanceByUserAccountIdCurrencyId(sender_account_id) {
     return new Promise((resolve, reject) => {
         connection.query(
             `SELECT account.balance
             FROM account
-            WHERE account.id = ? AND account.currency_id = ?;`,
-            [sender_account_id, currency_id],
+            WHERE account.id = ?;`,
+            [sender_account_id],
             (error, result) => {
                 if (error) {
                     console.error('Ошибка выполнения запроса:', error);
@@ -503,7 +560,7 @@ async function getCurrencyIdByCurrencyName(currency) {
                     reject(error);
                     console.log('error');
                 } else {
-                    console.log(result[0]);
+                    // console.log(result[0]);
                     resolve(result[0] ? result[0].currency_id : null);
                 }
             }
@@ -634,12 +691,17 @@ async function getSenderAccountBalanceBeforeFailByPaymentId(payment_id) {
                     console.error('Ошибка при обновлении баланса счета:', error);
                     reject(error);
                 } else {
-                    resolve(result[0].sender_account_balance_before);
+                    if (result.length > 0 && result[0].sender_account_balance_before !== undefined) {
+                        resolve(result[0].sender_account_balance_before);
+                    } else {
+                        resolve(null); // Handle case when result is empty or property is undefined
+                    }
                 }
             }
         );
     });
 }
+
 
 async function getRecipientAccountBalanceBeforeFailByAccountId(payment_id) {
     return new Promise((resolve, reject) => {
@@ -767,6 +829,29 @@ async function createPaymentForBankingService(commission, transfer_amount, credi
     });
 }
 
+async function getCurrencyIdByAccountNumber(account) {
+    return new Promise((resolve, reject) => {
+        const currentDate = new Date();
+        const formattedDate = currentDate.toISOString().slice(0, 19).replace('T', ' ');
+        connection.query(
+            `select currency.id
+            from currency
+            inner join account on
+            account.currency_id = currency.id
+            where account.number = ?;`,
+            [account],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                } else {
+                    resolve(result[0].id);
+                }
+            }
+        );
+    });
+}
+
 /////////////////////////
 
 
@@ -810,7 +895,7 @@ app.post('/TransferToBankClient', async (req, res) => {
         }
 
 
-        let sender_account_balance = parseFloat(await getUserBalanceByUserAccountIdCurrencyId(sender_account_id, currency_id));
+        let sender_account_balance = parseFloat(await getUserBalanceByUserAccountIdCurrencyId(sender_account_id));
 
         if (sender_account_balance === null) {
             res.send("Ошибка при обращении к базе данных!");
@@ -923,7 +1008,7 @@ app.post('/TransferByAccountNumber', async (req, res) => {
         }
 
 
-        let sender_account_balance = parseFloat(await getUserBalanceByUserAccountIdCurrencyId(sender_account_id, currency_id));
+        let sender_account_balance = parseFloat(await getUserBalanceByUserAccountIdCurrencyId(sender_account_id));
 
         if (sender_account_balance === null) {
             res.send("Ошибка при обращении к базе данных!");
@@ -1027,7 +1112,7 @@ app.post('/BankingTransfer', async (req, res) => {
             return;
         }
 
-        let sender_account_balance = parseFloat(await getUserBalanceByUserAccountIdCurrencyId(sender_account_id, currency_id));
+        let sender_account_balance = parseFloat(await getUserBalanceByUserAccountIdCurrencyId(sender_account_id));
 
         if (sender_account_balance === null) {
             res.send("Ошибка при обращении к базе данных!");
@@ -1084,6 +1169,111 @@ app.post('/BankingTransfer', async (req, res) => {
         // Handle errors
         let sender_account_balance_before = parseFloat(await getSenderAccountBalanceBeforeFailByPaymentId(payment_id));
         await setClientAccountBalanceByAccountId(sender_account_balance_before, sender_account_id);
+        
+        await setPaymentStatus(payment_id, 'failed');
+        await setTransactionStatus(transaction_id, 'failed');
+
+        console.error('Ошибка:', error);
+        res.send("Произошла ошибка при выполнении операции!");
+    }
+});
+
+app.post('/changeCurrency', async (req, res) => {
+    
+    let payment_id, transaction_id;
+    let sender_account_id, recipient_account_id;
+    
+    try {
+        let commission = parseFloat(req.body.commission);
+        let recieve_amount = parseFloat(req.body.recieve_amount);
+        let send_amount = parseFloat(req.body.send_amount);
+        let from_account = req.body.from_account;
+        let to_account = req.body.to_account;
+        let sender_amount = parseFloat(req.body.sender_amount);
+        
+        sender_account_id = await getUserAccountIdByAccountNumber(from_account);
+
+        if (sender_account_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        let sender_account_balance = parseFloat(await getUserBalanceByUserAccountIdCurrencyId(sender_account_id));
+
+        if (sender_account_balance === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        // check if there are insufficient funds in the sender's account
+        if (sender_account_balance < sender_amount) {
+            res.send('На вашем балансе недостаточно средств');
+            return;
+        }
+
+        recipient_account_id = await getUserAccountIdByAccountNumber(to_account);
+
+        if (recipient_account_id === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        let recipient_account_balance = parseFloat(await getUserBalanceByUserAccountIdCurrencyId(recipient_account_id));
+
+        if (recipient_account_balance === null) {
+            res.send("Ошибка при обращении к базе данных!");
+            return;
+        }
+
+        // Define variables for payment_id and transaction_id
+        let currency_id = await getCurrencyIdByAccountNumber(to_account);
+
+        // Create payment
+        try {
+            payment_id = await createPayment(commission, recieve_amount, send_amount,
+                                            'started', currency_id, sender_account_id, recipient_account_id,
+                                            sender_account_balance, recipient_account_balance, 'change_currency');
+        } catch (paymentError) {
+            console.error('Ошибка создания платежа:', paymentError);
+            res.send("Ошибка при обращении к базе данных!");
+
+            // Handle payment failure
+            await setPaymentStatus(payment_id, 'failed');
+            return;
+        }
+
+        // Create transaction
+        try {
+            transaction_id = await createTransaction(payment_id, 'started');
+        } catch (transactionError) {
+            console.error('Ошибка создания транзакции:', transactionError);
+            res.send("Ошибка при обращении к базе данных!");
+
+            // Handle transaction failure
+            await setPaymentStatus(payment_id, 'failed');
+            await setTransactionStatus(transaction_id, 'failed');
+            return;
+        }
+
+        let updatedSenderBalance = sender_account_balance - sender_amount;
+        let updatedRecipientBalance = recipient_account_balance + recieve_amount;
+
+        // Обновляем баланс отправителя
+        await updateAccountBalance(updatedSenderBalance, sender_account_id);
+        await updateAccountBalance(updatedRecipientBalance, recipient_account_id);
+
+        // Set payment and transaction statuses to 'successful'
+        await setPaymentStatus(payment_id, 'successful');
+        await setTransactionStatus(transaction_id, 'successful');
+
+        res.send("Средства успешно конвертированы!");    
+    } catch (error) {
+        // Handle errors
+        let sender_account_balance_before = parseFloat(await getSenderAccountBalanceBeforeFailByPaymentId(payment_id));
+        await setClientAccountBalanceByAccountId(sender_account_balance_before, sender_account_id);
+
+        let recipient_account_balance_before = parseFloat(await getRecipientAccountBalanceBeforeFailByAccountId(payment_id));
+        await setClientAccountBalanceByAccountId(recipient_account_balance_before, recipient_account_id);
         
         await setPaymentStatus(payment_id, 'failed');
         await setTransactionStatus(transaction_id, 'failed');

@@ -20,7 +20,7 @@
     <div id="menu">
         <form id="transfer_form">
             <h2>
-                Перевод клиенту банка
+                Перевод по номеру счета
             </h2>
             <table style="color:white; margin-left: 500px; margin-top: 70px; margin-bottom: 70px;">
                 <tr>
@@ -56,7 +56,6 @@
             </table>
 
             <input type="button" id="transfer_submit_button" value="Подтвердить" onclick="openModal('confirmModal')"/>
-
         </form>
 
         <!-- Форма с кнопками -->
@@ -85,7 +84,7 @@
 
     </div>
         
-   <!---------------------->
+    <!---------------------->
         <!-- МОДАЛКИ -->
     <!---------------------->
 
@@ -122,6 +121,77 @@
         </div>
     </div>
 
+    <!-- Модальное окно для обмена валют -->
+    <div id="changeCurrency" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal('changeCurrency')">&times;</span>
+            <h2>Обмен валют</h2>
+            <div style="width: 100%; text-align: center;">
+                <table style="color: white; text-align: center; margin-left: 80px;">
+                    <tr>
+                        <td>
+                            <select id="currency_for_transfer_dropdown" onchange="updateAccountDropdowns()">
+
+                            </select>
+                        </td>
+                        <td>
+                            <select id="account_number_for_transfer_dropdown" style="width: 220px;">
+
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <img src="../images/change.png" height="35px" width="35px">
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <select id="transfered_currency_dropdown"  onchange="updateTransferedAccountNumbers()">
+        
+                            </select>
+                        </td>
+                        <td>
+                            <select id="transfered_account_number_dropdown" style="width: 220px;">
+                                
+                            </select>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <h3>Сумма</h3>
+                        </td>
+                        <td>
+                            <input type="number" id="change_amount" name="change_amount"/>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <label id="error_message" style="color: red;"></label>
+            <br>
+            <br>
+            <input id="create_button" type="submit" value="Подтвердить" onclick="changeConfirmation()"/>
+            <input id="create_button" type="submit" value="Отмена" onclick="closeModal('changeCurrency')"/>
+        </div>
+    </div>
+
+    <!-- Модальное окно для подтверждения -->
+    <div id="confirmChangeModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" onclick="closeModal('confirmChangeModal')">&times;</span>
+            <h2>Подтверждение</h2>
+            <h3 id="amount_to_recieve"></h3>
+            <h3 id="commission"></h3>
+            <h3 id="exchange_rate"></h3>
+            <h3 id="from_account"></h3>
+            <h3 id="to_account"></h3>
+
+            <input type="button" value="Подтвердить" id="confirm_transfer_button" onclick="confirmChange()"/>
+            <input type="button" value="Отмена" onclick="closeModal('confirmChangeModal')"/>
+        </div>
+    </div>
+
+
     <!-- Модальное окно для подтверждения -->
     <div id="confirmModal" class="modal">
         <div class="modal-content" style="text-align: center;">
@@ -135,11 +205,11 @@
         </div>
     </div>
 
-    <!-- Модальное окно для подтверждения -->
+    <!-- Модальное окно для отображения статуса -->
     <div id="successModal" class="modal">
         <div class="modal-content" style="text-align: center;">
             <span class="close" onclick="closeModal('successModal')">&times;</span>
-            <h2>Состояние перевода</h2>
+            <h2>Состояние транзакции</h2>
             <h3 id="transfer_condition"></h3>
         </div>
     </div>
