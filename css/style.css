@@ -259,6 +259,7 @@ form {
     padding-top: 60px; /* Отступ сверху */
 }
 .modal-content {
+    text-align: center;
     background-color: #161b22; /* Цвет фона модального окна */
     margin: 5% auto; /* Центрируем по вертикали и горизонтали */
     padding: 20px;
@@ -348,6 +349,22 @@ form {
     background-color: #676CC2;
     border: none;
     border-radius: 10px;
+}
+
+#full_size_card {
+    background-color: #676CC2;
+    height: 50px;
+    width: 80px;
+    text-align: left;
+}
+
+#card_actions_table {
+    margin: 0 auto; /* Центрируем таблицу по горизонтали */
+    text-align: center;
+}
+
+#card_actions_table td {
+    vertical-align: middle;
 }
 
 #create_button {

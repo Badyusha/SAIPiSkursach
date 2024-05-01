@@ -91,24 +91,39 @@ function fieldsAreEmpty() {
     return fields_are_empty;
 }
 
+function createNewAccount() {
+    // Отправляем запрос к базе данных
+    $.ajax({
+        type: 'post',
+        url: '/createNewAccount', // Путь к серверному обработчику запроса
+        data: {
+            currency: document.getElementById('account_dropdown').value,
+            username: sender_username
+        },
+        success: function(response) {
+            // console.log("Response: " + JSON.stringify(response)); // Выводим ответ от сервера в консоль
+            openSuccessModal(response); // Передаем массив объектов напрямую
+        },
+        error: function(xhr, status, error) {
+            console.error('Ошибка выполнения запроса:', error);
+        }
+    });
+}
+
 // Функция для открытия модального окна
 function openModal(modalId) {
-    if(modalId !== 'confirmModal') { 
+    if(modalId === 'changeCurrency') {
+        addChangeInfo();
         var modal = document.getElementById(modalId);
         modal.style.display = "block"; // Показываем модальное окно
         return;
     }
 
-    addChangeInfo();
-    updateAccountDropdowns(); // обновляем списки счетов и валют
-    fillTransferCurrency(); // обновляем списки счетов и валют
-    
-    var modal = document.getElementById(modalId);
-    if(modalId === 'changeCurrency') {
+    if(modalId !== 'confirmModal') { 
+        var modal = document.getElementById(modalId);
         modal.style.display = "block"; // Показываем модальное окно
         return;
     }
-
 
     if(fieldsAreEmpty()) { return; }
 

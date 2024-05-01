@@ -111,14 +111,14 @@
     <div id="accountModal" class="modal">
         <div class="modal-content">
             <span class="close" onclick="closeModal('accountModal')">&times;</span>
-            <h2>Создание счета</h2>
+            <h2 style="text-align: center;">Создание счета</h2>
             <br>
-            <div>
+            <div style="text-align: center;">
                 <select id="account_dropdown">
                     <option value="USD">USD</option>
                     <option value="BYN">BYN</option>
                 </select>
-                <input id="create_button" type="submit" value="Создать"/>
+                <input id="create_button" type="submit" value="Создать" style="margin-left: 90px;" onclick="createNewAccount()"/>
             </div>
         </div>
     </div>

@@ -169,6 +169,25 @@ function openSuccessModal(response) {
     modal.style.display = "block"; // Показываем модальное окно
 }
 
+function createNewAccount() {
+    // Отправляем запрос к базе данных
+    $.ajax({
+        type: 'post',
+        url: '/createNewAccount', // Путь к серверному обработчику запроса
+        data: {
+            currency: document.getElementById('account_dropdown').value,
+            username: sender_username
+        },
+        success: function(response) {
+            // console.log("Response: " + JSON.stringify(response)); // Выводим ответ от сервера в консоль
+            openSuccessModal(response); // Передаем массив объектов напрямую
+        },
+        error: function(xhr, status, error) {
+            console.error('Ошибка выполнения запроса:', error);
+        }
+    });
+}
+
 // Функция для открытия новой страницы с данными из выбранного выпадающего списка
 function openNewPage() {
     var transferDropdown = document.getElementById("transfer_dropdown");

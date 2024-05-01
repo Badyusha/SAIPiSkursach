@@ -30,27 +30,26 @@ app.use('/js', express.static(path.join(__dirname, '..', 'js'), { 'Content-Type'
 app.use('/images', express.static(path.join(__dirname, '..', 'images'), { 'Content-Type': 'image/png' }));
 
 
+// Создаем соединение с базой данных
+const connection = mysql.createConnection({
+    host: 'localhost',
+    user: 'root',
+    password: 'root',
+    database: 'saipis'
+});
 
+// Проверка соединения
+connection.connect((err) => {
+    if (err) {
+        console.error('Ошибка подключения к базе данных:', err);
+        reject(err);
+        return;
+    }
+    console.log('Подключение к базе данных успешно!');
+});
 
 // Функция для регистрации пользователя в базе данных
 function registerUser(first_name, last_name, birth_date, username, password) {
-    // Создаем соединение с базой данных
-    const connection = mysql.createConnection({
-        host: 'localhost', // Хост базы данных
-        user: 'root', // Имя пользователя
-        password: 'root', // Пароль пользователя
-        database: 'saipis' // Название базы данных
-    });
-
-    // Проверка соединения
-    connection.connect((err) => {
-        if (err) {
-            console.error('Ошибка подключения к базе данных:', err);
-            return;
-        }
-        console.log('Подключение к базе данных успешно!');
-    });
-
     const new_user = {
         username: username,
         password: password,
@@ -92,24 +91,6 @@ function registerUser(first_name, last_name, birth_date, username, password) {
 
 function loginUser(username, password) {
     return new Promise((resolve, reject) => {
-        // Создаем соединение с базой данных
-        const connection = mysql.createConnection({
-            host: 'localhost',
-            user: 'root',
-            password: 'root',
-            database: 'saipis'
-        });
-
-        // Проверка соединения
-        connection.connect((err) => {
-            if (err) {
-                console.error('Ошибка подключения к базе данных:', err);
-                reject(err);
-                return;
-            }
-            console.log('Подключение к базе данных успешно!');
-        });
-
         connection.query('SELECT 1 FROM user WHERE username = ? AND password = ?', [username, password], (err, result) => {
             if (err) {
                 console.error('Ошибка выполнения запроса:', err);
@@ -189,14 +170,6 @@ app.get('/BankingTransfer', (req, res) => {
 app.get('/getUsername', (req, res) => {
     // Отправляем логин пользователя клиенту
     res.send(req.session.username);
-});
-
-// Создаем соединение с базой данных
-const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: 'root',
-    database: 'saipis'
 });
 
 app.get('/getClientAccounts', (req, res) => {
@@ -304,6 +277,24 @@ app.get('/confirmChangingCurrency', (req, res) => {
     );
 });
 
+
+// Маршрут для страницы с информацией о карте
+app.get('/CardInfo/:cardId', (req, res) => {
+    // Проверяем, авторизован ли пользователь
+    if (req.session.username) {
+        // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
+        // res.sendFile(path.join(__dirname, '..', 'html', '.html'));
+        res.sendFile(path.join(__dirname, '..', 'html', 'CardInfo.html'));
+    } else {
+        // Если пользователь не авторизован, перенаправляем на страницу входа
+        res.redirect('/SignIn');
+    }
+    // Извлекаем айдишник карты из пути
+    const cardId = req.params.cardId;
+
+    // Отправляем ответ клиенту
+    console.log(`Информация о карте с id: ${cardId}`);
+});
 
 // Маршрут для обработки запросов на /getClientData
 app.get('/getClientData', (req, res) => {
@@ -547,7 +538,6 @@ function getUserBalanceByUserAccountIdCurrencyId(sender_account_id) {
 }
 
 async function getCurrencyIdByCurrencyName(currency) {
-    console.log(currency);
     return new Promise((resolve, reject) => {
         connection.query(
             `select currency.id as currency_id
@@ -850,6 +840,53 @@ async function getCurrencyIdByAccountNumber(account) {
             }
         );
     });
+}
+
+async function getUserIdByUsername(username) {
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `select user.id as user_id
+            from user
+            where user.username = ?;`,
+            [username],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                    return;
+                }
+                (result.length === 0 || !result) ? resolve(null)
+                                    : resolve(result[0].user_id);
+            }
+        );
+    });
+}
+
+// // Функция для создания нового аккаунта
+async function createNewAccountByUserIdCurrencyId(user_id, currency_id) {
+    let accountNumber = generateRandomAccountNumber();
+    return new Promise((resolve, reject) => {
+        connection.query(
+            `INSERT INTO account(number, user_id, currency_id, balance) VALUES (?, ?, ?, ?);`,
+            [accountNumber, user_id, currency_id, 0],
+            (error, result) => {
+                if (error) {
+                    console.error('Ошибка выполнения запроса:', error);
+                    reject(error);
+                } else {
+                    resolve(result.insertId);
+                }
+            }
+        );
+    });
+}
+
+function generateRandomAccountNumber() {
+    let randomNumber = '';
+    for (let i = 0; i < 24; i++) {
+        randomNumber += Math.floor(Math.random() * 10);
+    }
+    return randomNumber.toString();
 }
 
 /////////////////////////
@@ -1286,7 +1323,23 @@ app.post('/changeCurrency', async (req, res) => {
 
 
 
+// Маршрут для обработки POST-запроса на создание нового аккаунта
+app.post('/createNewAccount', async (req, res) => {
+    let currency_id = await getCurrencyIdByCurrencyName(req.body.currency);
+    let user_id = await getUserIdByUsername(req.body.username);
 
+    try {
+        let accountId = await createNewAccountByUserIdCurrencyId(user_id, currency_id);
+        
+        (accountId !== null) ?
+                            res.send("Аккаунт успешно создан!")
+                            :
+                            res.send("Не удалось создать аккаунт!");
+    } catch (error) {
+        console.error("Не удалось создать аккаунт:", error);
+        res.status(500).send("Не удалось создать аккаунт!");
+    }
+});
 
 // Обработчик POST запроса для входа пользователя
 app.post('/SignIn', async (req, res) => {
@@ -1312,8 +1365,6 @@ app.post('/SignIn', async (req, res) => {
         res.status(500).send('Произошла ошибка при входе пользователя');
     }
 });
-
-
 
 
 
