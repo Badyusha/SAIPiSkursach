@@ -128,11 +128,26 @@
         <div class="modal-content" style="text-align: center;">
             <span class="close" onclick="closeModal('confirmModal')">&times;</span>
             <h2>Подтверждение</h2>
-            <h3 id="commission_message"></h3>
-            <br>
-            <h3 id="total_amount"></h3>
+            <h4 id="commission_message"></h4>
+            <h4 id="total_amount"></h4>
             <input type="button" value="Подтвердить" id="confirm_transfer_button" onclick="confirmTransfer()"/>
             <input type="button" value="Отмена" onclick="closeModal('confirmModal')"/>
+        </div>
+    </div>
+
+    <!-- Модальное окно для подтверждения -->
+    <div id="confirmChangeModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" onclick="closeModal('confirmChangeModal')">&times;</span>
+            <h2>Подтверждение</h2>
+            <h3 id="amount_to_recieve"></h3>
+            <h3 id="commission"></h3>
+            <h3 id="exchange_rate"></h3>
+            <h3 id="from_account"></h3>
+            <h3 id="to_account"></h3>
+
+            <input type="button" value="Подтвердить" id="confirm_transfer_button" onclick="confirmChange()"/>
+            <input type="button" value="Отмена" onclick="closeModal('confirmChangeModal')"/>
         </div>
     </div>
 
@@ -196,22 +211,6 @@
             <br>
             <input id="create_button" type="submit" value="Подтвердить" onclick="changeConfirmation()"/>
             <input id="create_button" type="submit" value="Отмена" onclick="closeModal('changeCurrency')"/>
-        </div>
-    </div>
-
-    <!-- Модальное окно для подтверждения -->
-    <div id="confirmChangeModal" class="modal">
-        <div class="modal-content" style="text-align: center;">
-            <span class="close" onclick="closeModal('confirmChangeModal')">&times;</span>
-            <h2>Подтверждение</h2>
-            <h3 id="amount_to_recieve"></h3>
-            <h3 id="commission"></h3>
-            <h3 id="exchange_rate"></h3>
-            <h3 id="from_account"></h3>
-            <h3 id="to_account"></h3>
-
-            <input type="button" value="Подтвердить" id="confirm_transfer_button" onclick="confirmChange()"/>
-            <input type="button" value="Отмена" onclick="closeModal('confirmChangeModal')"/>
         </div>
     </div>
 

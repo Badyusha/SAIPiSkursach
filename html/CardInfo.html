@@ -17,26 +17,56 @@
     </header>
 
     <div id="menu">
-        <form id="account_balance">
+        <form id="card_form">
             <div id="full_size_card">
-
+                <div id="valid_date_N_balance">
+                    <h2 id="valid_date"></h2>
+                    <h2 id="balance"></h2>
+                </div>
+                <br>
+                <h2 id="card_number"></h2>
             </div>
+
+            <h2 id="account_number"></h2>
         </form>
 
         <form id="cards">
-            <table id="card_actions_table"> 
+            <table id="card_actions_table">
                 <tr>
                     <td>
-                        <input type="button" value="История платежей">
+                        <input type="button" value="История платежей" onclick="paymentsHistory()">
                     </td>
                 </tr>
                 <tr>
                     <td>                        
-                        <input type="button" value="Переводы">
+                        <input type="button" value="Переводы" onclick="transfersHistory()">
                     </td>
                 </tr>
             </table>
         </form>
+
+        <!-- Модальное окно для истории платежей -->
+        <div id="paymentsHistory" class="modal">
+            <div class="payment-modal-content">
+                <span class="close" onclick="closeModal('paymentsHistory')">&times;</span>
+                <table id="payment_table">
+                    <thead>
+                        <tr class="odd-row">
+                            <th>Дата платежа   </th>
+                            <th>Вид оплаты   </th>
+                            <th>Списанная сумма   </th>
+                            <th>Комиссия   </th>
+                            <th>Валюта   </th>
+                            <th>Статус   </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Сюда будут добавлены строки -->
+                    </tbody>
+                </table>
+                
+            </div>
+        </div>
 
         <!-- Модальное окно для перевода -->
         <div id="transferModal" class="modal">
@@ -146,15 +176,29 @@
     </div>
 
     <!-- Модальное окно для подтверждения -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" onclick="closeModal('confirmModal')">&times;</span>
+            <h2>Подтверждение</h2>
+            <h3 id="commission_message"></h3>
+            <br>
+            <h3 id="total_amount"></h3>
+            <input type="button" value="Подтвердить" id="confirm_transfer_button" onclick="confirmTransfer()"/>
+            <input type="button" value="Отмена" onclick="closeModal('confirmModal')"/>
+        </div>
+    </div>
+    
+    <!-- Модальное окно для подтверждения -->
     <div id="confirmChangeModal" class="modal">
         <div class="modal-content" style="text-align: center;">
             <span class="close" onclick="closeModal('confirmChangeModal')">&times;</span>
             <h2>Подтверждение</h2>
-            <h3 id="amount_to_recieve"></h3>
-            <h3 id="commission"></h3>
-            <h3 id="exchange_rate"></h3>
-            <h3 id="from_account"></h3>
-            <h3 id="to_account"></h3>
+            <h4 id="amount_to_recieve"></h4>
+            <h4 id="debited_amount"></h4>
+            <h4 id="commission"></h4>
+            <h4 id="exchange_rate"></h4>
+            <h4 id="from_account"></h4> 
+            <h4 id="to_account"></h4>
 
             <input type="button" value="Подтвердить" id="confirm_transfer_button" onclick="confirmChange()"/>
             <input type="button" value="Отмена" onclick="closeModal('confirmChangeModal')"/>

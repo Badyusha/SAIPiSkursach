@@ -268,6 +268,10 @@ function changeConfirmation() {
             document.getElementById('amount_to_recieve').textContent = "Сумма к получению: " + recieve_amount + " " + to_currency;
             document.getElementById('amount_to_recieve').value = recieve_amount;
 
+            let debited_amount = response[3];
+            document.getElementById('debited_amount').textContent = "Списываемая сумма: " + debited_amount;
+            document.getElementById('debited_amount').value = debited_amount;
+
             let from_account_msg = "Со счета: " + document.getElementById('account_number_for_transfer_dropdown').value;
             document.getElementById('from_account').textContent = from_account_msg;
             document.getElementById('from_account').value = document.getElementById('account_number_for_transfer_dropdown').value;
@@ -302,9 +306,9 @@ function confirmChange() {
             sender_amount: amount_before_converting,
             commission: parseFloat(document.getElementById('commission').value),
             recieve_amount: total_amount,
-            send_amount: total_amount + parseFloat(document.getElementById('commission').value),
+            send_amount: parseFloat(document.getElementById('debited_amount').value),
             from_account: document.getElementById('from_account').value,
-            to_account: document.getElementById('to_account').value,
+            to_account: document.getElementById('to_account').value
         },
         success: function(response) {
             openSuccessModal(response);

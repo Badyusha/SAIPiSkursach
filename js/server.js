@@ -3,6 +3,8 @@ const session = require('express-session');
 const path = require('path');
 const mysql = require('mysql2');
 const { connect } = require('http2');
+const querystring = require('querystring');
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -29,6 +31,7 @@ app.use('/css', express.static(path.join(__dirname, '..', 'css'), { 'Content-Typ
 app.use('/js', express.static(path.join(__dirname, '..', 'js'), { 'Content-Type': 'application/javascript' }));
 app.use('/images', express.static(path.join(__dirname, '..', 'images'), { 'Content-Type': 'image/png' }));
 
+app.set('view engine', 'ejs');
 
 // Создаем соединение с базой данных
 const connection = mysql.createConnection({
@@ -272,28 +275,97 @@ app.get('/confirmChangingCurrency', (req, res) => {
                                 :
                                 total_amount = ((amount * BYNUSD_rate) * (1 - (percent / 100))).toFixed(2); 
 
-            res.send([percent, BYNUSD_rate, total_amount]);
+            res.send([percent, BYNUSD_rate, total_amount, amount]);
         }
     );
 });
 
+app.get('/getPaymentsHistory', (req, res) => {
+    // Выполняем запрос к базе данных
+    connection.query(
+        `select payment.commission_amount, payment.debited_amount, payment.status,
+        date_format(payment.start_date, '%d-%m-%Y %H:%i') as start_date, currency.currency, payment.payment_option
+        from payment
+        inner join currency on
+        payment.currency_id = currency.id
+        inner join card on
+        payment.sender_account_id = card.account_id
+        where card.id = ? and payment.payment_option = 'change_currency';`,
+        [req.query.cardId],
+        (error, results) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+            
+            // Отправляем результаты клиенту
+            res.send(results);
+            // console.log(results);
+        }
+    );
+});
+
+app.get('/getTransfersHistory', (req, res) => {
+    // Выполняем запрос к базе данных
+    connection.query(
+        `select payment.commission_amount, payment.debited_amount, payment.status,
+        date_format(payment.start_date, '%d-%m-%Y %H:%i') as start_date, currency.currency, payment.payment_option
+        from payment
+        inner join currency on
+        payment.currency_id = currency.id
+        inner join card on
+        payment.sender_account_id = card.account_id
+        where card.id = ? and payment.payment_option != 'change_currency';`,
+        [req.query.cardId],
+        (error, results) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+            
+            // Отправляем результаты клиенту
+            res.send(results);
+            // console.log(results);
+        }
+    );
+});
 
 // Маршрут для страницы с информацией о карте
 app.get('/CardInfo/:cardId', (req, res) => {
-    // Проверяем, авторизован ли пользователь
-    if (req.session.username) {
-        // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
-        // res.sendFile(path.join(__dirname, '..', 'html', '.html'));
-        res.sendFile(path.join(__dirname, '..', 'html', 'CardInfo.html'));
-    } else {
-        // Если пользователь не авторизован, перенаправляем на страницу входа
-        res.redirect('/SignIn');
-    }
-    // Извлекаем айдишник карты из пути
     const cardId = req.params.cardId;
 
-    // Отправляем ответ клиенту
-    console.log(`Информация о карте с id: ${cardId}`);
+    // Проверяем, авторизован ли пользователь
+    const url = '/CardInfo.html?' + querystring.stringify({ cardId: cardId });
+    (req.session.username) ?
+                            res.redirect(url)
+                            :
+                            res.redirect('/SignIn');
+});
+
+app.get('/getCardData', (req, res) => {
+    // Выполняем запрос к базе данных
+    connection.query(
+        `select date_format(card.valid_until, '%m/%y') as valid_until, card.number as card_number, account.number as account_number, account.balance, currency.currency
+        from card
+        inner join account
+        on account.id = card.account_id
+        inner join currency
+        on currency.id = account.currency_id
+        WHERE card.id = ?;`,
+        [req.query.cardId],
+        (error, result) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+            
+            // Отправляем результаты клиенту
+            res.send(result);
+        }
+    );
 });
 
 // Маршрут для обработки запросов на /getClientData
@@ -954,7 +1026,7 @@ app.post('/TransferToBankClient', async (req, res) => {
         }
 
 
-        let payment_id = await createPayment(commission, transfer_amount, transfer_amount + commission,
+        let payment_id = await createPayment(commission, transfer_amount + commission, transfer_amount,
                                             'started', currency_id, sender_account_id, recipient_account_id,
                                             sender_account_balance, recipient_account_balance, 'bank_client');
 
@@ -1067,7 +1139,7 @@ app.post('/TransferByAccountNumber', async (req, res) => {
         }
 
 
-        let payment_id = await createPayment(commission, transfer_amount, transfer_amount + commission,
+        let payment_id = await createPayment(commission, transfer_amount + commission, transfer_amount,
                                             'started', currency_id, sender_account_id, recipient_account_id,
                                             sender_account_balance, recipient_account_balance, 'account_number');
 
@@ -1167,7 +1239,7 @@ app.post('/BankingTransfer', async (req, res) => {
 
         // Create payment
         try {
-            payment_id = await createPaymentForBankingService(commission, transfer_amount, transfer_amount + commission,
+            payment_id = await createPaymentForBankingService(commission, transfer_amount + commission, transfer_amount,
                                             'started', currency_id, sender_account_id, operation_code,
                                             sender_account_balance, 'banking');
         } catch (paymentError) {
@@ -1263,11 +1335,11 @@ app.post('/changeCurrency', async (req, res) => {
         }
 
         // Define variables for payment_id and transaction_id
-        let currency_id = await getCurrencyIdByAccountNumber(to_account);
+        let currency_id = await getCurrencyIdByAccountNumber(from_account);
 
         // Create payment
         try {
-            payment_id = await createPayment(commission, recieve_amount, send_amount,
+            payment_id = await createPayment(commission, send_amount, recieve_amount,
                                             'started', currency_id, sender_account_id, recipient_account_id,
                                             sender_account_balance, recipient_account_balance, 'change_currency');
         } catch (paymentError) {

@@ -148,14 +148,27 @@
         <div class="modal-content" style="text-align: center;">
             <span class="close" onclick="closeModal('confirmChangeModal')">&times;</span>
             <h2>Подтверждение</h2>
-            <h3 id="amount_to_recieve"></h3>
-            <h3 id="commission"></h3>
-            <h3 id="exchange_rate"></h3>
-            <h3 id="from_account"></h3>
-            <h3 id="to_account"></h3>
+            <h4 id="amount_to_recieve"></h4>
+            <h4 id="debited_amount"></h4>
+            <h4 id="commission"></h4>
+            <h4 id="exchange_rate"></h4>
+            <h4 id="from_account"></h4> 
+            <h4 id="to_account"></h4>
 
             <input type="button" value="Подтвердить" id="confirm_transfer_button" onclick="confirmChange()"/>
             <input type="button" value="Отмена" onclick="closeModal('confirmChangeModal')"/>
+        </div>
+    </div>
+
+    <!-- Модальное окно для подтверждения -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" onclick="closeModal('confirmModal')">&times;</span>
+            <h2>Подтверждение</h2>
+            <h4 id="commission_message"></h4>
+            <h4 id="total_amount"></h4>
+            <input type="button" value="Подтвердить" id="confirm_transfer_button" onclick="confirmTransfer()"/>
+            <input type="button" value="Отмена" onclick="closeModal('confirmModal')"/>
         </div>
     </div>
 

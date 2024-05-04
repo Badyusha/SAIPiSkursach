@@ -44,10 +44,6 @@ footer {
     display: flex;
 }
 
-#account_balance {
-    width: 660px;
-}
-
 #account_balance_table {
     width: 100%;
     color: white;
@@ -70,10 +66,26 @@ footer {
 }
 
 #account_balance,
+#card_form {
+    width: 660px;
+    margin: 0 auto; /* Центрируем по горизонтали */
+}
+
+#account_balance,
+#card_form,
 #cards,
 #personal {
     margin-top: 35px;
-    height: 530;
+    height: 530px; /* Добавляем 'px' */
+}
+
+#card_form {
+    flex-direction: column;
+    color: white;
+    display: flex; /* Добавляем flex-контейнер */
+    align-items: center; /* Выравниваем по вертикали */
+    justify-content: center; /* Выравниваем по горизонтали */
+    text-align: center; /* Устанавливаем текст по центру */
 }
 
 #menu {
@@ -200,6 +212,26 @@ form {
     background-color: #7479da;
 }
 
+#card_actions_table input[type="button"] {
+    text-align: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 14px;
+    color: white;
+    height: 40px;
+    width: 150px;
+    border: none;
+    border-radius: 15px;
+    border: 2px solid #676CC2;
+    background-color: #161b22;
+    margin-right: 30px;
+}
+
+#card_actions_table input[type="button"]:hover {
+    border: 2px solid #8e92e7;
+    background-color: #1B1F25;
+}
+
 .modal-content input[type="button"] {
     text-align: center;
     align-items: center;
@@ -268,6 +300,53 @@ form {
     width: 30%; /* Ширина модального окна */
     box-shadow: 0px 0px 80px rgba(0, 0, 0, 1); /* Добавляем тень */
 }
+
+.payment-modal-content {
+    text-align: center;
+    background-color: #161b22; /* Цвет фона модального окна */
+    margin: 5% auto; /* Центрируем по вертикали и горизонтали */
+    padding: 20px;
+    border: none;
+    border-radius: 15px;
+    width: 50%; /* Ширина модального окна */
+    box-shadow: 0px 0px 80px rgba(0, 0, 0, 1); /* Добавляем тень */
+}
+
+#payment_table {
+    margin-left: 20px;
+    margin-top: 20px;
+    text-align: center;
+    color: white;
+    border-collapse: collapse;
+}
+
+#payment_table th,
+#payment_table td {
+    padding: 10px; /* Отступ внутри ячеек */
+}
+
+#payment_table thead {
+    position: sticky; /* Зафиксируем заголовки таблицы */
+    top: 0; /* Заголовки останутся вверху */
+    background-color: #161b22; /* Цвет фона заголовков */
+    z-index: 1; /* Чтобы заголовки находились поверх строк таблицы */
+}
+
+#payment_table tbody {
+    max-height: 300px; /* Максимальная высота таблицы */
+    overflow-y: auto; /* Включаем вертикальную прокрутку, если контент превышает высоту */
+}
+
+/* Цвета для чередования строк */
+.even-row {
+    color: rgb(200, 200, 200);
+    background-color: #161b22; /* Цвет фона для четных строк */
+}
+
+.odd-row {
+    background-color: #212833; /* Цвет фона для нечетных строк */
+}
+
 .close {
     color: #aaa; /* Цвет кнопки закрытия */
     float: right; /* Выравниваем по правому краю */
@@ -353,14 +432,37 @@ form {
 
 #full_size_card {
     background-color: #676CC2;
-    height: 50px;
-    width: 80px;
+    height: 250px;
+    width: 400px;
     text-align: left;
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    margin-bottom: 20px; /* Расстояние между full_size_card и account_number */
+}
+
+#valid_date_N_balance {
+    margin-left: 30px;
+    margin-right: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+#card_number {
+    margin-left: 30px;
+}
+
+#account_number {
+    margin-top: 20px; /* Расстояние между full_size_card и account_number */
 }
 
 #card_actions_table {
     margin: 0 auto; /* Центрируем таблицу по горизонтали */
     text-align: center;
+    margin-top: 180px;
+    border-spacing: 20px;
 }
 
 #card_actions_table td {

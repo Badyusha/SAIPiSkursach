@@ -1,4 +1,5 @@
 let user_name;
+let cardId;
 
 // Посылаем GET запрос на сервер для получения логина пользователя
 $(document).ready(function() {
@@ -13,6 +14,23 @@ $(document).ready(function() {
             user_name = $('#username').text().trim();
         });
 
+    const urlParams = new URLSearchParams(window.location.search);
+    cardId = urlParams.get('cardId');
+
+    // Отправляем запрос к базе данных
+    $.ajax({
+        type: 'GET',
+        url: '/getCardData', // Путь к серверному обработчику запроса
+        data: { cardId: cardId }, // Передаем имя пользователя на сервер
+        success: function(response) {
+            // console.log("Response: " + JSON.stringify(response)); // Выводим ответ от сервера в консоль
+            addCardData(response); // Передаем массив объектов напрямую
+        },
+        error: function(xhr, status, error) {
+            console.error('Ошибка выполнения запроса:', error);
+        }
+    });
+
     // Обработчик изменения выбранного значения в списке
     document.getElementById("dropdown").addEventListener("change", function() {
         var selectedOption = this.value; // Получаем выбранную опцию
@@ -20,6 +38,21 @@ $(document).ready(function() {
         // Здесь можно добавить код для обработки выбранной опции
     });
 });
+
+function addCardData(response) {
+    document.getElementById('valid_date').innerHTML = response[0].valid_until;
+
+    document.getElementById('balance').innerHTML = response[0].balance + " " + response[0].currency;
+
+    document.getElementById('card_number').innerHTML = response[0].card_number.substring(0, 4) + " **** **** " + 
+                                                        response[0].card_number.substring(response[0].card_number.length - 4);
+
+    document.getElementById('account_number').innerHTML = "Счет: " + response[0].account_number.substring(0, 4) +
+                                                            " **** **** **** **** " +
+                                                            response[0].account_number.substring(response[0].account_number.length - 4);
+}
+
+
 
 let account_number_currency;
 
@@ -249,6 +282,10 @@ function changeConfirmation() {
             document.getElementById('amount_to_recieve').textContent = "Сумма к получению: " + recieve_amount + " " + to_currency;
             document.getElementById('amount_to_recieve').value = recieve_amount;
 
+            let debited_amount = response[3];
+            document.getElementById('debited_amount').textContent = "Списываемая сумма: " + debited_amount;
+            document.getElementById('debited_amount').value = debited_amount;
+
             let from_account_msg = "Со счета: " + document.getElementById('account_number_for_transfer_dropdown').value;
             document.getElementById('from_account').textContent = from_account_msg;
             document.getElementById('from_account').value = document.getElementById('account_number_for_transfer_dropdown').value;
@@ -270,6 +307,10 @@ function changeConfirmation() {
 }
 
 function confirmChange() {
+    // let from_account_number = document.getElementById('account_number_for_transfer_dropdown').value;
+    // let to_account_number = document.getElementById('transfered_account_number_dropdown').value;
+    // let from_currency = document.getElementById('currency_for_transfer_dropdown').value;
+
     let total_amount = parseFloat(document.getElementById('amount_to_recieve').value);
 
     $.ajax({
@@ -279,9 +320,9 @@ function confirmChange() {
             sender_amount: amount_before_converting,
             commission: parseFloat(document.getElementById('commission').value),
             recieve_amount: total_amount,
-            send_amount: total_amount + parseFloat(document.getElementById('commission').value),
+            send_amount: parseFloat(document.getElementById('debited_amount').value),
             from_account: document.getElementById('from_account').value,
-            to_account: document.getElementById('to_account').value,
+            to_account: document.getElementById('to_account').value
         },
         success: function(response) {
             openSuccessModal(response);
@@ -304,4 +345,180 @@ function openSuccessModal(response) {
 
     var modal = document.getElementById("successModal");
     modal.style.display = "block"; // Показываем модальное окно
+}
+
+function clearTable() {
+    const tbody = document.querySelector('#payment_table tbody');
+    tbody.innerHTML = ''; // Очищаем содержимое tbody
+}
+
+function addPaymentsHistoryList(response) {
+    // Получаем ссылку на tbody
+    const tbody = document.querySelector('#payment_table tbody');
+
+    console.log(response);
+
+    // Проходим по каждому элементу в массиве и добавляем его в таблицу
+    response.forEach((payment, index) => {
+        // Создаем новую строку в таблице
+        const row = document.createElement('tr');
+
+        // Добавляем ячейки в эту строку
+        const dateCell = document.createElement('td');
+        dateCell.textContent = payment.start_date;
+        row.appendChild(dateCell);
+
+        const paymentOptionCell = document.createElement('td');
+        paymentOptionCell.textContent = 'Обмен валют';
+        row.appendChild(paymentOptionCell);
+
+        const debitedAmountCell = document.createElement('td');
+        debitedAmountCell.textContent = payment.debited_amount;
+        row.appendChild(debitedAmountCell);
+
+        const commissionAmountCell = document.createElement('td');
+        commissionAmountCell.textContent = payment.commission_amount;
+        row.appendChild(commissionAmountCell);
+
+        const currencyCell = document.createElement('td');
+        currencyCell.textContent = payment.currency;
+        row.appendChild(currencyCell);
+
+        const statusCell = document.createElement('td');
+        statusCell.textContent = payment.status;
+
+        (payment.status === 'successful')
+                                        ?
+                                        statusCell.style.color = 'green'
+                                        :
+                                        statusCell.style.color = 'red';
+
+        row.appendChild(statusCell);
+
+        (index % 2 === 0)
+                        ?
+                        row.classList.add('even-row') // Добавляем класс для четных строк
+                        :
+                        row.classList.add('odd-row'); // Добавляем класс для нечетных строк
+
+        console.log(row);
+
+        // Добавляем созданную строку в tbody
+        tbody.appendChild(row);
+    });
+}
+
+function paymentsHistory() {
+    $.ajax({
+        type: "get",
+        url: "/getPaymentsHistory",
+        data: {
+            cardId: cardId
+        },
+        success: function(response) {
+            clearTable();
+            addPaymentsHistoryList(response);
+        },
+        error: function(xhr, status, error) {
+            // Обработка ошибки
+            console.error(xhr.responseText);
+        }
+    });
+    
+    openModal('paymentsHistory');
+}
+
+function addTransfersHistoryList(response) {
+    // Получаем ссылку на tbody
+    const tbody = document.querySelector('#payment_table tbody');
+
+    console.log(response);
+
+    // Проходим по каждому элементу в массиве и добавляем его в таблицу
+    response.forEach((payment, index) => {
+        // Создаем новую строку в таблице
+        const row = document.createElement('tr');
+
+        // Добавляем ячейки в эту строку
+        const dateCell = document.createElement('td');
+        dateCell.textContent = payment.start_date;
+        row.appendChild(dateCell);
+
+        const paymentOptionCell = document.createElement('td');
+
+        switch(payment.payment_option) {
+            case 'account_number' : {
+                paymentOptionCell.textContent = 'По номеру карты';
+                break;
+            }
+            case 'bank_client' : {
+                paymentOptionCell.textContent = 'По ФИО клиента';
+                break;
+            }
+            case 'banking' : {
+                paymentOptionCell.textContent = 'Банкинг';
+                break;
+            }
+            default : {
+                paymentOptionCell.textContent = 'Отсутствует';
+                break;
+            }
+        }
+
+        row.appendChild(paymentOptionCell);
+
+        const debitedAmountCell = document.createElement('td');
+        debitedAmountCell.textContent = payment.debited_amount;
+        row.appendChild(debitedAmountCell);
+
+        const commissionAmountCell = document.createElement('td');
+        commissionAmountCell.textContent = payment.commission_amount;
+        row.appendChild(commissionAmountCell);
+
+        const currencyCell = document.createElement('td');
+        currencyCell.textContent = payment.currency;
+        row.appendChild(currencyCell);
+
+        const statusCell = document.createElement('td');
+        statusCell.textContent = payment.status;
+
+        (payment.status === 'successful')
+                                        ?
+                                        statusCell.style.color = 'green'
+                                        :
+                                        statusCell.style.color = 'red';
+
+        row.appendChild(statusCell);
+
+        (index % 2 === 0)
+                        ?
+                        row.classList.add('even-row') // Добавляем класс для четных строк
+                        :
+                        row.classList.add('odd-row'); // Добавляем класс для нечетных строк
+
+        console.log(row);
+
+        // Добавляем созданную строку в tbody
+        tbody.appendChild(row);
+    });
+}
+
+function transfersHistory() {
+    $.ajax({
+        type: "get",
+        url: "/getTransfersHistory",
+        data: {
+            cardId: cardId
+        },
+        success: function(response) {
+            clearTable();
+            addTransfersHistoryList(response);
+        },
+        error: function(xhr, status, error) {
+            // Обработка ошибки
+            console.error(xhr.responseText);
+        }
+    });
+    
+    openModal('paymentsHistory');
 }
