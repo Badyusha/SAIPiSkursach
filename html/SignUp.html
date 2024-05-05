@@ -64,12 +64,12 @@
             <tr>
                 <td>
                     <input
-                        type="date"
-                        id="birth_date"
-                        name="birth_date"
-                        placeholder="Дата рождения"
+                        type="text"
+                        id="middlename"
+                        name="middlename"
+                        placeholder="Отчество"
                     />
-                    <label id="birth_date_error"> </label>
+                    <label id="middlename_error"> </label>
                 </td>
 
                 <td>
@@ -81,6 +81,28 @@
                         autocomplete="new-password"
                     />
                     <label id="password_error"> </label>
+                </td>
+            </tr>
+
+            <tr>
+                <td>
+                    <input
+                        type="date"
+                        id="birth_date"
+                        name="birth_date"
+                        placeholder="Дата рождения"
+                    />
+                    <label id="birth_date_error"> </label>
+                </td>
+
+                <td>
+                    <input
+                        type="number"
+                        id="special_code"
+                        name="special_code"
+                        placeholder="Спец. код (необязательно)"
+                    />
+                    <label id="special_code_error"> </label>
                 </td>
             </tr>
         </table>

@@ -1,0 +1,48 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sigma-bank</title>
+
+    <link href="../css/style.css" type="text/css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="../js/employeeHomePage.js" type="text/javascript"></script>
+    <script src="../js/server.js" type="text/javascript"></script>
+</head>
+<body>
+    <header>
+        <img src="../images/btc-icon.webp">
+        <h2>SIGMA-BANK</h2>
+    </header>
+
+    <div id="menu">
+        <form id="card_form">
+            <div id="full_size_card">
+                <div id="valid_date_N_balance">
+                    <h2 id="valid_date"></h2>
+                    <h2 id="balance"></h2>
+                </div>
+                <br>
+                <h2 id="card_number"></h2>
+            </div>
+
+            <h2 id="account_number"></h2>
+        </form>
+
+        <form id="cards">
+            <table id="card_actions_table">
+                <tr>
+                    <td>
+                        <input type="button" value="История платежей" onclick="paymentsHistory()">
+                    </td>
+                </tr>
+                <tr>
+                    <td>                        
+                        <input type="button" value="Переводы" onclick="transfersHistory()">
+                    </td>
+                </tr>
+            </table>
+        </form>
+</body> 
+</html>

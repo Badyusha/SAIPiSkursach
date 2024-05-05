@@ -3,6 +3,7 @@ const session = require('express-session');
 const path = require('path');
 const mysql = require('mysql2');
 const { connect } = require('http2');
+const crypto = require('crypto');
 const querystring = require('querystring');
 
 
@@ -52,61 +53,83 @@ connection.connect((err) => {
 });
 
 // Функция для регистрации пользователя в базе данных
-function registerUser(first_name, last_name, birth_date, username, password) {
-    const new_user = {
-        username: username,
-        password: password,
-        role: 'client'
-    };
+async function registerUser(first_name, last_name, middle_name, birth_date, username, password, special_code_length) {
+    return new Promise((resolve, reject) => {
+        let role;
 
-    // Пример выполнения запроса к базе данных для добавления пользователя
-    connection.query('INSERT INTO user SET ?', new_user, (err, result) => {
-        if (err) {
-            console.error('Ошибка выполнения запроса:', err);
-            return false;
-        }
-        console.log('Добавлена новая запись в таблицу "user":', result);
-        
-        // Получаем идентификатор только что добавленного пользователя
-        const user_id = result.insertId;
-        
-        const new_client = {
-            user_id: user_id,
-            first_name: first_name,
-            last_name: last_name,
-            birth_date: birth_date,
+        (parseInt(special_code_length) === 0) ? role = 'client' : role = 'employee';
+
+        let hashed_password = customHash(password);
+
+        const new_user = {
+            username: username,
+            password: hashed_password,
+            role: role
         };
 
-        // Пример выполнения запроса к базе данных для добавления клиента
-        connection.query('INSERT INTO Client SET ?', new_client, (err, result) => {
-            if (err) {
-                console.error('Ошибка выполнения запроса:', err);
-                return false;
-            }
-            console.log('Добавлена новая запись в таблицу "Client":', result);
+        if (role === 'employee') {
+            connection.query('INSERT INTO user SET ?', new_user, (err, result) => {
+                if (err) {
+                    console.error('Ошибка выполнения запроса:', err);
+                    reject(err); // Если есть ошибка, отклоняем промис
+                } else {
+                    console.log('Добавлена новая запись в таблицу "user":', result);
+                    resolve(role); // Если запрос выполнен успешно, разрешаем промис
+                }
+            });
+        } else {
+            connection.query('INSERT INTO user SET ?', new_user, (err, result) => {
+                if (err) {
+                    console.error('Ошибка выполнения запроса:', err);
+                    reject(null); // Если есть ошибка, отклоняем промис
+                } else {
+                    console.log('Добавлена новая запись в таблицу "user":', result);
+                    
+                    const user_id = result.insertId;
 
-            // Закрываем соединение после завершения работы
-            connection.end();
-        });
+                    const new_client = {
+                        user_id: user_id,
+                        first_name: first_name,
+                        last_name: last_name,
+                        middle_name: middle_name,
+                        birth_date: birth_date,
+                    };
+
+                    connection.query('INSERT INTO Client SET ?', new_client, (err, result) => {
+                        if (err) {
+                            console.error('Ошибка выполнения запроса:', err);
+                            reject(null); // Если есть ошибка, отклоняем промис
+                        } else {
+                            console.log('Добавлена новая запись в таблицу "Client":', result);
+                            resolve(role); // Если запрос выполнен успешно, разрешаем промис
+                        }
+                    });
+                }
+            });
+        }
     });
-    return true;
 }
+
 
 function loginUser(username, password) {
     return new Promise((resolve, reject) => {
-        connection.query('SELECT 1 FROM user WHERE username = ? AND password = ?', [username, password], (err, result) => {
+        connection.query('SELECT user.role FROM user WHERE username = ? AND password = ?', [username, password], (err, result) => {
             if (err) {
                 console.error('Ошибка выполнения запроса:', err);
                 reject(err);
                 return;
             }
             // Если найден пользователь с такими учетными данными, возвращаем true, иначе false
-            resolve(result.length > 0);
+            resolve(result[0].role);
         });
     });
 }
 
-
+function customHash(str) {
+    const hash = crypto.createHash('sha256'); // Можно выбрать другой алгоритм, например 'md5', 'sha1', 'sha256' и т.д.
+    hash.update(str);
+    return hash.digest('hex');
+}
 
 
 
@@ -160,6 +183,17 @@ app.get('/BankingTransfer', (req, res) => {
     if (req.session.username) {
         // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
         res.sendFile(path.join(__dirname, '..', 'html', 'BankingTransfer.html'));
+    } else {
+        // Если пользователь не авторизован, перенаправляем на страницу входа
+        res.redirect('/SignIn');
+    }
+});
+
+app.get('/EmployeeHomePage', (req, res) => {
+    // Проверяем, авторизован ли пользователь
+    if (req.session.username) {
+        // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
+        res.sendFile(path.join(__dirname, '..', 'html', 'EmployeeHomePage.html'));
     } else {
         // Если пользователь не авторизован, перенаправляем на страницу входа
         res.redirect('/SignIn');
@@ -1418,24 +1452,58 @@ app.post('/SignIn', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        const loginResult = await loginUser(username, password);
+        const role = await loginUser(username, customHash(password));
         
-        if (loginResult) {
-            console.log('Успешный вход. Перенаправление на ClientHomePage...');
-            
-            // Сохраняем логин пользователя в сессии
-            req.session.username = username;
-
-            // Перенаправляем пользователя на страницу ClientHomePage
-            res.redirect('/ClientHomePage');
-        } else {
+        if (!role) {
             console.log('Неверное имя пользователя или пароль.');
             res.status(400).send('Неверное имя пользователя или пароль');
         }
+        console.log('Успешный вход. Перенаправление на ClientHomePage...');
+        
+        // Сохраняем логин пользователя в сессии
+        req.session.username = username;
+        
+        (role === 'client') ? res.redirect('/ClientHomePage') : res.redirect('/EmployeeHomePage');
     } catch (error) {
         console.error('Ошибка при входе пользователя:', error);
         res.status(500).send('Произошла ошибка при входе пользователя');
     }
+});
+
+app.post('/SignUp', async (req, res) => {
+    const {
+        first_name,
+        last_name,
+        middlename,
+        birth_date,
+        username,
+        password,
+        special_code_length
+    } = req.body;
+
+    let role;
+    try{
+        role = await registerUser(first_name, last_name, middlename, birth_date, username, password, special_code_length);
+
+        if (!role) {
+            console.log('Неверное имя пользователя или пароль.');
+            res.status(400).send('Неверное имя пользователя или пароль');
+            return;
+        }
+        console.log('Успешная регистрация. Перенаправление на ClientHomePage...');
+        
+        // Сохраняем логин пользователя в сессии
+        req.session.username = username;
+
+        // redirecting...
+        // if there will be more roles -> then use switch(role)...
+        (role === 'client') ? res.redirect('/ClientHomePage') : res.redirect('/EmployeeHomePage');
+
+    } catch (error) {
+        console.error('Ошибка при входе пользователя:', error);
+        res.status(500).send(role);
+    }
+
 });
 
 

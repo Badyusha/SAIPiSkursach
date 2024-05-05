@@ -17,7 +17,7 @@ $(document).ready(function() {
     const urlParams = new URLSearchParams(window.location.search);
     cardId = urlParams.get('cardId');
 
-    // Отправляем запрос к базе данных
+    // Отправляем запрос на сервер
     $.ajax({
         type: 'GET',
         url: '/getCardData', // Путь к серверному обработчику запроса
