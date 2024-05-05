@@ -26,8 +26,13 @@ $(document).ready(function() {
             url: '/SignUp', // URL адрес, на который отправляется запрос
             data: formData, // Данные формы
             success: function(response) {
+                // Проверяем, содержит ли ответ редирект
+                if (response.indexOf('/ClientHomePage') !== -1 || response.indexOf('/EmployeeHomePage') !== -1 || response.indexOf('/SignUp') !== -1 ) {
+                    window.location.href = response; // Выполняем редирект
+                } else {
+                    console.log(response); // Если редиректа нет, выводим содержимое ответа в консоль
+                }
                 console.log(response);
-                window.location.href = "/ClientHomePage";
             },
             error: function(response) {
                 document.getElementById('username').style.border = '2px solid red';
@@ -35,7 +40,6 @@ $(document).ready(function() {
                 console.log(response);
             } 
         });
-        console.log(response); // Выводим ответ от сервера в консоль
     });
 });
 
@@ -124,8 +128,8 @@ function validateForm() {
 
     var first_name_error = document.getElementById('first_name_error');
     var last_name_error = document.getElementById('last_name_error');
-    var middle_name_error = document.getElementById('middlename_error').value;
-    var special_code_error = document.getElementById('special_code_error').value;
+    var middle_name_error = document.getElementById('middlename_error');
+    var special_code_error = document.getElementById('special_code_error');
     var birth_date_error = document.getElementById('birth_date_error');
     var username_error = document.getElementById('username_error');
     var password_error = document.getElementById('password_error');

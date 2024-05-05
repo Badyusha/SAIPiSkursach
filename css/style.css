@@ -61,6 +61,10 @@ footer {
     width: 480px;
 }
 
+#employee_options {
+    width: 700px;
+}
+
 #personal {
     width: 80px;
 }
@@ -71,14 +75,27 @@ footer {
     margin: 0 auto; /* Центрируем по горизонтали */
 }
 
+#choose_client_label {
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+}
+
+#employee_actions {
+    width: 600px;
+}
+
 #account_balance,
 #card_form,
 #cards,
-#personal {
+#employee_options,
+#personal,
+#employee_actions {
     margin-top: 35px;
-    height: 530px; /* Добавляем 'px' */
+    height: 530px;
 }
 
+#employee_actions,
 #card_form {
     flex-direction: column;
     color: white;
@@ -360,6 +377,30 @@ form {
     cursor: pointer;
 }
 
+#choose_client {
+    border-spacing: 20px;
+}
+
+#choose_client input[type="button"] {
+    font-weight: bold;
+    white-space: inherit;
+    text-align: center;
+    align-items: center;
+    font-size: 14px;
+    color: white;
+    height: 45px;
+    width: 150px;
+    border: none;
+    border-radius: 10px;
+    background-color: #676CC2;
+    margin-right: 30px;
+}
+
+#choose_client input[type="button"]:hover {
+    background-color: #7479da;
+}
+
+#clients_dropdown,
 #transfer_dropdown {
     color: white;
     background-color: #0D1117;

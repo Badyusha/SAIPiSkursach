@@ -14,7 +14,7 @@ $(document).ready(function() {
             url: '/SignIn', // URL адрес, на который отправляется запрос
             data: formData, // Данные формы
             success: function(response) {
-            console.log(response); // Выводим ответ от сервера в консоль
+                console.log(response); // Выводим ответ от сервера в консоль
             }
         });
     });

@@ -17,32 +17,50 @@
     </header>
 
     <div id="menu">
-        <form id="card_form">
-            <div id="full_size_card">
-                <div id="valid_date_N_balance">
-                    <h2 id="valid_date"></h2>
-                    <h2 id="balance"></h2>
-                </div>
-                <br>
-                <h2 id="card_number"></h2>
-            </div>
-
-            <h2 id="account_number"></h2>
-        </form>
-
-        <form id="cards">
-            <table id="card_actions_table">
+        <form id="employee_actions">
+            <table id="choose_client">
                 <tr>
                     <td>
-                        <input type="button" value="История платежей" onclick="paymentsHistory()">
+                        <label id="choose_client_label">Выберите клиента</label>
+                    </td>
+                    <td>
+                        <select id="clients_dropdown">
+
+                        </select>
                     </td>
                 </tr>
                 <tr>
-                    <td>                        
-                        <input type="button" value="Переводы" onclick="transfersHistory()">
+                    <td>
+                        <input type="button" id="create_card" value="Оформить карту">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" id="create_account" value="Открыть счет">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" id="top_up_account" value="Пополнить счет">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" id="payments_history" value="Просмотреть историю платежей">
                     </td>
                 </tr>
             </table>
         </form>
+
+        <form id="employee_options">
+            
+        </form>
+    </div>
+
+    <footer>
+        <a href="https://github.com/Badyusha">
+            <img src="../images/github.png" height="35px" width="35px">
+        </a>
+    </footer>
 </body> 
 </html>

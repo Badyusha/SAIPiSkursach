@@ -485,6 +485,30 @@ app.get('/getClientCardsInfo', (req, res) => {
     );
 });
 
+app.get('/getClients', (req, res) => {
+    // Выполняем запрос к базе данных
+    connection.query(
+        `select
+            client.user_id,
+            client.last_name,
+            client.first_name,
+            client.middle_name
+        from client;`,
+        [ ],
+        (error, results) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+            
+            // Отправляем результаты клиенту
+            res.send(results);
+            console.log(results);
+        }
+    );
+});
+
 //////////////////////////
 // functions to get data from database
 /////////////////////////
@@ -1481,27 +1505,38 @@ app.post('/SignUp', async (req, res) => {
         special_code_length
     } = req.body;
 
-    let role;
     try{
-        role = await registerUser(first_name, last_name, middlename, birth_date, username, password, special_code_length);
+        const role = await registerUser(first_name, last_name, middlename, birth_date, username, password, special_code_length);
 
         if (!role) {
             console.log('Неверное имя пользователя или пароль.');
             res.status(400).send('Неверное имя пользователя или пароль');
             return;
         }
-        console.log('Успешная регистрация. Перенаправление на ClientHomePage...');
+        console.log('Успешная регистрация. Перенаправление...');
         
         // Сохраняем логин пользователя в сессии
         req.session.username = username;
 
         // redirecting...
-        // if there will be more roles -> then use switch(role)...
-        (role === 'client') ? res.redirect('/ClientHomePage') : res.redirect('/EmployeeHomePage');
-
+        switch(role) {
+            case "client" : {
+                res.send('/ClientHomePage');
+                break;
+            }
+            case 'employee' : {
+                res.send('/EmployeeHomePage');
+                break;
+            }
+            default : {
+                res.send('/SignUp');
+                break;
+            }
+        }
+        // (role === 'client') ? res.redirect('/ClientHomePage') : res.redirect('/EmployeeHomePage');
     } catch (error) {
         console.error('Ошибка при входе пользователя:', error);
-        res.status(500).send(role);
+        res.status(500).send(error);
     }
 
 });
