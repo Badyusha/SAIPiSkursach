@@ -112,6 +112,7 @@ async function registerUser(first_name, last_name, middle_name, birth_date, user
 
 
 function loginUser(username, password) {
+    console.log(username, password);
     return new Promise((resolve, reject) => {
         connection.query('SELECT user.role FROM user WHERE username = ? AND password = ?', [username, password], (err, result) => {
             if (err) {
@@ -120,7 +121,8 @@ function loginUser(username, password) {
                 return;
             }
             // Если найден пользователь с такими учетными данными, возвращаем true, иначе false
-            resolve(result[0].role);
+            // console.log(result);
+            resolve(result);
         });
     });
 }
@@ -504,7 +506,50 @@ app.get('/getClients', (req, res) => {
             
             // Отправляем результаты клиенту
             res.send(results);
-            console.log(results);
+            // console.log(results);
+        }
+    );
+});
+
+app.get('/getAccounts', (req, res) => {
+    // Выполняем запрос к базе данных
+    connection.query(
+        `select account.number as account_number
+        from account
+        where account.user_id = ?;`,
+        [req.query.client_id],
+        (error, results, fields) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.status(500).send('Ошибка выполнения запроса');
+                return;
+            }
+
+            // Отправляем результаты клиенту
+            res.send(results);
+            // console.log(results);
+        }
+    );
+});
+
+app.get('/getPayments', async (req, res) => {
+    connection.query(
+        `select date_format(payment.start_date, '%y.%m.%d %H:%i:%s') as date, payment.recipient_account_id,
+        payment.payment_option, payment.debited_amount, currency.currency
+        from payment
+        join currency on
+        currency.id = payment.currency_id
+        join account on
+        account.id = payment.sender_account_id
+        where account.user_id = ?;`,
+        [req.query.user_id],
+        (error, result) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.send(null);
+            } else {
+                res.send(result);
+            }
         }
     );
 });
@@ -562,10 +607,10 @@ async function getAccountBalanceByAccountId(account_id) {
             (error, result) => {
                 if (error) {
                     console.error('Ошибка выполнения запроса:', error);
-                    reject(result[0].balance);
+                    reject(null);
                     return;
                 } 
-                resolve(null);
+                resolve(result[0].balance);
                 return;
             }
         );
@@ -1019,6 +1064,14 @@ function generateRandomAccountNumber() {
     return randomNumber.toString();
 }
 
+function getRandomCardNumber() {
+    let randomNumber = '';
+    for (let i = 0; i < 16; i++) {
+        randomNumber += Math.floor(Math.random() * 10);
+    }
+    return randomNumber.toString();
+}
+
 /////////////////////////
 
 
@@ -1462,13 +1515,70 @@ app.post('/createNewAccount', async (req, res) => {
         let accountId = await createNewAccountByUserIdCurrencyId(user_id, currency_id);
         
         (accountId !== null) ?
-                            res.send("Аккаунт успешно создан!")
+                            res.send("Счет успешно создан!")
                             :
-                            res.send("Не удалось создать аккаунт!");
+                            res.send("Не удалось создать счет!");
     } catch (error) {
-        console.error("Не удалось создать аккаунт:", error);
-        res.status(500).send("Не удалось создать аккаунт!");
+        console.error("Не удалось создать счет:", error);
+        res.status(500).send("Не удалось создать счет!");
     }
+});
+
+app.post('/topUpAccount', async (req, res) => {
+    let account_id = await getUserAccountIdByAccountNumber(req.body.account_number);
+    let accountBalance = await getAccountBalanceByAccountId(account_id);
+    let totalBalance = parseFloat(accountBalance) + parseFloat(req.body.amount);
+
+    connection.query(
+        `update account
+        set account.balance = ?
+        where account.id = ?;`,
+        [totalBalance, account_id],
+        (error, result) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.send('Не удалось пополнить баланс!');
+            } else {
+                res.send('Баланс успешно пополнен!');
+            }
+        }
+    );
+});
+
+app.post('/createAccount', async (req, res) => {
+    let currency_id = await getCurrencyIdByCurrencyName(req.body.currency);
+    
+    try {
+        let accountId = await createNewAccountByUserIdCurrencyId(req.body.client_id, currency_id);
+        
+        (accountId !== null) ?
+                            res.send("Счет успешно создан!")
+                            :
+                            res.send("Не удалось создать счет!");
+    } catch (error) {
+        console.error("Не удалось создать счет:", error);
+        res.status(500).send("Не удалось создать счет!");
+    }
+});
+
+app.post('/createCard', async (req, res) => {
+    var currentDate = new Date(); // Получаем текущую дату
+    var valid_until = new Date(currentDate.getFullYear() + 4, currentDate.getMonth(), currentDate.getDate()); // Добавляем 4 года
+
+    var account_id = await getUserAccountIdByAccountNumber(req.body.account_number);
+
+    connection.query(
+        `INSERT INTO card(number, account_id, valid_until) VALUES (?, ?, ?);`,
+        [getRandomCardNumber(), account_id, valid_until],
+        (error, result) => {
+            if (error) {
+                console.error('Ошибка выполнения запроса:', error);
+                res.send('Не удалось создать карту!');
+            } else {
+                res.send('Карта успешно создана!');
+            }
+        }
+    );
 });
 
 // Обработчик POST запроса для входа пользователя
@@ -1476,21 +1586,36 @@ app.post('/SignIn', async (req, res) => {
     const { username, password } = req.body;
 
     try {
-        const role = await loginUser(username, customHash(password));
-        
-        if (!role) {
+        const user = await loginUser(username, customHash(password));
+
+        if (user.length === 0 || !user) {
             console.log('Неверное имя пользователя или пароль.');
-            res.status(400).send('Неверное имя пользователя или пароль');
+            res.send('400');
+            return;
         }
-        console.log('Успешный вход. Перенаправление на ClientHomePage...');
+        console.log('Успешный вход. Перенаправление...');
         
         // Сохраняем логин пользователя в сессии
         req.session.username = username;
         
-        (role === 'client') ? res.redirect('/ClientHomePage') : res.redirect('/EmployeeHomePage');
+        // redirecting...
+        switch(user[0].role) {
+            case "client" : {
+                res.send('/ClientHomePage');
+                break;
+            }
+            case 'employee' : {
+                res.send('/EmployeeHomePage');
+                break;
+            }
+            default : {
+                res.send('/SignUp');
+                break;
+            }
+        }
     } catch (error) {
         console.error('Ошибка при входе пользователя:', error);
-        res.status(500).send('Произошла ошибка при входе пользователя');
+        res.send('500');
     }
 });
 
@@ -1533,7 +1658,6 @@ app.post('/SignUp', async (req, res) => {
                 break;
             }
         }
-        // (role === 'client') ? res.redirect('/ClientHomePage') : res.redirect('/EmployeeHomePage');
     } catch (error) {
         console.error('Ошибка при входе пользователя:', error);
         res.status(500).send(error);

@@ -336,11 +336,7 @@ function confirmChange() {
     closeModal('confirmChangeModal');
 }
 
-function openSuccessModal(response) {
-    closeModal('confirmChangeModal');
-    closeModal('accountModal');
-    closeModal('changeCurrency');
-    
+function openSuccessModal(response) {    
     document.getElementById('transfer_condition').textContent = response;
 
     var modal = document.getElementById("successModal");
@@ -400,8 +396,6 @@ function addPaymentsHistoryList(response) {
                         row.classList.add('even-row') // Добавляем класс для четных строк
                         :
                         row.classList.add('odd-row'); // Добавляем класс для нечетных строк
-
-        console.log(row);
 
         // Добавляем созданную строку в tbody
         tbody.appendChild(row);

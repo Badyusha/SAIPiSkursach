@@ -31,12 +31,12 @@
                 </tr>
                 <tr>
                     <td>
-                        <input type="button" id="create_card" value="Оформить карту">
+                        <input type="button" id="create_account" value="Открыть счет">
                     </td>
                 </tr>
                 <tr>
                     <td>
-                        <input type="button" id="create_account" value="Открыть счет">
+                        <input type="button" id="create_card" value="Оформить карту">
                     </td>
                 </tr>
                 <tr>
@@ -49,12 +49,26 @@
                         <input type="button" id="payments_history" value="Просмотреть историю платежей">
                     </td>
                 </tr>
+                <tr>
+                    <td>
+                        <button id="clear_employee_options_button" onclick="closeEmployeeOptions()">Очистить форму</button>
+                    </td>
+                </tr>
             </table>
         </form>
 
         <form id="employee_options">
             
         </form>
+    </div>
+
+    <!-- Модальное окно для отображения статуса -->
+    <div id="successModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" onclick="closeModal('successModal')">&times;</span>
+            <h2>Состояние операции</h2>
+            <h3 id="transfer_condition"></h3>
+        </div>
     </div>
 
     <footer>

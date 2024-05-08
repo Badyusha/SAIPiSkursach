@@ -61,8 +61,20 @@ footer {
     width: 480px;
 }
 
+#employee_actions {
+    margin-top: 35px;
+    height: 530px;
+}
+
 #employee_options {
+    text-align: center;
     width: 700px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
 }
 
 #personal {
@@ -75,6 +87,7 @@ footer {
     margin: 0 auto; /* Центрируем по горизонтали */
 }
 
+#choosed_option,
 #choose_client_label {
     color: white;
     font-size: 18px;
@@ -184,7 +197,7 @@ input[type="number"]::-webkit-outer-spin-botton {
     margin: 0;
 }
 
-#signin_form input[type="submit"],
+#signin_form input[type="button"],
 #signup_form input[type="submit"] {
     font-size: 16px;
     background-color: #4a9b47;
@@ -195,7 +208,7 @@ input[type="number"]::-webkit-outer-spin-botton {
     border-radius: 10px;
     cursor: pointer;
 }
-#signin_form input[type="submit"]:hover,
+#signin_form input[type="button"]:hover,
 #signup_form input[type="submit"]:hover {
     background-color: #5ab257;
 }
@@ -229,6 +242,7 @@ form {
     background-color: #7479da;
 }
 
+#clear_employee_options_button,
 #card_actions_table input[type="button"] {
     text-align: center;
     align-items: center;
@@ -238,30 +252,40 @@ form {
     height: 40px;
     width: 150px;
     border: none;
-    border-radius: 15px;
+    border-radius: 10px;
     border: 2px solid #676CC2;
     background-color: #161b22;
     margin-right: 30px;
 }
 
+#clear_employee_options_button:hover,
 #card_actions_table input[type="button"]:hover {
     border: 2px solid #8e92e7;
     background-color: #1B1F25;
 }
 
+#amount_input {
+    width: 100px;
+}
+
+#cancel_action,
+#continue_action,
 .modal-content input[type="button"] {
     text-align: center;
     align-items: center;
     font-size: 14px;
+    font-weight: bold;
     color: white;
     height: 40px;
     width: 110px;
     border: none;
-    border-radius: 15px;
+    border-radius: 10px;
     background-color: #676CC2;
     margin-right: 30px;
 }
 
+#cancel_action:hover,
+#continue_action:hover,
 .modal-content input[type="button"]:hover {
     background-color: #7479da;
 }

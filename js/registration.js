@@ -29,8 +29,6 @@ $(document).ready(function() {
                 // Проверяем, содержит ли ответ редирект
                 if (response.indexOf('/ClientHomePage') !== -1 || response.indexOf('/EmployeeHomePage') !== -1 || response.indexOf('/SignUp') !== -1 ) {
                     window.location.href = response; // Выполняем редирект
-                } else {
-                    console.log(response); // Если редиректа нет, выводим содержимое ответа в консоль
                 }
                 console.log(response);
             },
