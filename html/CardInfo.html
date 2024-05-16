@@ -172,6 +172,8 @@
             <br>
             <!-- Кнопка для обмена валюты -->
             <input type="button" id="change_currency" value="Обменять валюту" onclick="openModal('changeCurrency')"/>
+            <br><br><br><br><br><br><br><br><br>
+            <input type="button" id="sign_out" value="Выйти" onclick="signOut()" style="font-weight: bold; color: red; font-size: 14px; background-color: #161b22;"/>
         </form>
     </div>
 
@@ -180,9 +182,9 @@
         <div class="modal-content" style="text-align: center;">
             <span class="close" onclick="closeModal('confirmModal')">&times;</span>
             <h2>Подтверждение</h2>
-            <h3 id="commission_message"></h3>
-            <br>
-            <h3 id="total_amount"></h3>
+            <h4 id="commission_message"></h4>
+            <h4 id="total_amount"></h4>
+            <h4 id="banking_name"></h4>
             <input type="button" value="Подтвердить" id="confirm_transfer_button" onclick="confirmTransfer()"/>
             <input type="button" value="Отмена" onclick="closeModal('confirmModal')"/>
         </div>

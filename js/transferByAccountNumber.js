@@ -298,6 +298,23 @@ function changeConfirmation() {
     openModal('confirmChangeModal');
 }
 
+function signOut() {
+    $.ajax({
+        type: "post",
+        url: "/SignOut",
+        data: { },
+        success: function(response) {
+            if(response === '200') {
+                window.location.href = "/SignIn";
+            }
+        },
+        error: function(xhr, status, error) {
+            // Обработка ошибки
+            console.error(xhr.responseText);
+        }
+    });
+}
+
 function confirmChange() {
     // let from_account_number = document.getElementById('account_number_for_transfer_dropdown').value;
     // let to_account_number = document.getElementById('transfered_account_number_dropdown').value;

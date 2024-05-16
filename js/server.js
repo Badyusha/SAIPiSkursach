@@ -112,7 +112,7 @@ async function registerUser(first_name, last_name, middle_name, birth_date, user
 
 
 function loginUser(username, password) {
-    console.log(username, password);
+    console.log("Пользователь авторизовался: " + username);
     return new Promise((resolve, reject) => {
         connection.query('SELECT user.role FROM user WHERE username = ? AND password = ?', [username, password], (err, result) => {
             if (err) {
@@ -146,6 +146,10 @@ app.get('/SignUp', (req, res) => {
 
 // Обработчик GET запроса для страницы ClientHomePage
 app.get('/ClientHomePage', (req, res) => {
+    if(req.session.role === 'employee') {
+        res.redirect('/EmployeeHomePage');
+        return;
+    }
     // Проверяем, авторизован ли пользователь
     if (req.session.username) {
         // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
@@ -158,6 +162,10 @@ app.get('/ClientHomePage', (req, res) => {
 
 // Обработчик GET запроса для новой страницы с динамическими параметрами
 app.get('/TransferToBankClient', (req, res) => {
+    if(req.session.role === 'employee') {
+        res.redirect('/EmployeeHomePage');
+        return;
+    }
     // Проверяем, авторизован ли пользователь
     if (req.session.username) {
         // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
@@ -169,6 +177,10 @@ app.get('/TransferToBankClient', (req, res) => {
 });
 
 app.get('/TransferByAccountNumber', (req, res) => {
+    if(req.session.role === 'employee') {
+        res.redirect('/EmployeeHomePage');
+        return;
+    }
     // Проверяем, авторизован ли пользователь
     if (req.session.username) {
         // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
@@ -181,6 +193,10 @@ app.get('/TransferByAccountNumber', (req, res) => {
 });
 
 app.get('/BankingTransfer', (req, res) => {
+    if(req.session.role === 'employee') {
+        res.redirect('/EmployeeHomePage');
+        return;
+    }
     // Проверяем, авторизован ли пользователь
     if (req.session.username) {
         // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
@@ -192,6 +208,10 @@ app.get('/BankingTransfer', (req, res) => {
 });
 
 app.get('/EmployeeHomePage', (req, res) => {
+    if(req.session.role === 'client') {
+        res.redirect('/ClientHomePage');
+        return;
+    }
     // Проверяем, авторизован ли пользователь
     if (req.session.username) {
         // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
@@ -372,6 +392,11 @@ app.get('/getTransfersHistory', (req, res) => {
 app.get('/CardInfo/:cardId', (req, res) => {
     const cardId = req.params.cardId;
 
+    if(req.session.role === 'employee') {
+        res.redirect('/EmployeeHomePage');
+        return;
+    }
+
     // Проверяем, авторизован ли пользователь
     const url = '/CardInfo.html?' + querystring.stringify({ cardId: cardId });
     (req.session.username) ?
@@ -441,13 +466,13 @@ app.get('/getBankingName', (req, res) => {
         (error, results) => {
             if (error) {
                 console.error('Ошибка выполнения запроса:', error);
-                res.status(500).send('Ошибка выполнения запроса');
+                res.send('500');
                 return;
             }
 
             if (results.length === 0) {
                 console.error('Услуги с указанным кодом не найдено!');
-                res.status(500).send('Услуги с указанным кодом не найдено!');
+                res.send('404');
                 return;
             }
 
@@ -1581,6 +1606,11 @@ app.post('/createCard', async (req, res) => {
     );
 });
 
+app.post('/SignOut', (req, res) => {
+    req.session.destroy();
+    res.send('200');
+});
+
 // Обработчик POST запроса для входа пользователя
 app.post('/SignIn', async (req, res) => {
     const { username, password } = req.body;
@@ -1601,10 +1631,12 @@ app.post('/SignIn', async (req, res) => {
         // redirecting...
         switch(user[0].role) {
             case "client" : {
+                req.session.role = 'client';
                 res.send('/ClientHomePage');
                 break;
             }
             case 'employee' : {
+                req.session.role = 'employee';
                 res.send('/EmployeeHomePage');
                 break;
             }
@@ -1646,10 +1678,12 @@ app.post('/SignUp', async (req, res) => {
         // redirecting...
         switch(role) {
             case "client" : {
+                req.session.role = 'client'
                 res.send('/ClientHomePage');
                 break;
             }
             case 'employee' : {
+                req.session.role = 'employee'
                 res.send('/EmployeeHomePage');
                 break;
             }

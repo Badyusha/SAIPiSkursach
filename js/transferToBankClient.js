@@ -110,6 +110,23 @@ function createNewAccount() {
     });
 }
 
+function signOut() {
+    $.ajax({
+        type: "post",
+        url: "/SignOut",
+        data: { },
+        success: function(response) {
+            if(response === '200') {
+                window.location.href = "/SignIn";
+            }
+        },
+        error: function(xhr, status, error) {
+            // Обработка ошибки
+            console.error(xhr.responseText);
+        }
+    });
+}
+
 // Функция для открытия модального окна
 function openModal(modalId) {
     if(modalId === 'changeCurrency') {

@@ -50,19 +50,16 @@ $(document).ready(function() {
 });
 
 function addAccountBalanceData(results) {
+    if(results.length === 0) {
+        $('#account_balance').html('<div style="text-align: center; color: white;">' +
+                                        '<h3>' +
+                                            'У вас нет ни одного счета' +
+                                        '</h3>' +
+                                    '</div>');
+    }
+    
     // Получаем ссылку на таблицу
     var table = document.getElementById("account_balance_table");
-
-    if(results.length === 0) {
-        while (table.rows.length > 0) {
-            table.deleteRow(0);
-        }
-        var row = table.insertRow();
-        
-        // Добавляем ячейки с данными в эту строку
-        var cell1 = row.insertCell(0);
-        cell1.innerHTML = "U have no accounts";
-    }
 
     // Проходим по результатам запроса и добавляем их в таблицу
     results.forEach(function(rowData) {
@@ -81,6 +78,23 @@ function addAccountBalanceData(results) {
         cell2.innerHTML = rowData.balance + " " + rowData.currency;
     });
 
+}
+
+function signOut() {
+    $.ajax({
+        type: "post",
+        url: "/SignOut",
+        data: { },
+        success: function(response) {
+            if(response === '200') {
+                window.location.href = "/SignIn";
+            }
+        },
+        error: function(xhr, status, error) {
+            // Обработка ошибки
+            console.error(xhr.responseText);
+        }
+    });
 }
 
 let account_number_currency;
@@ -207,16 +221,17 @@ function closeModal(modalId) {
 }
 
 function addCards(results) {
+    if(results.length === 0){
+        $('#cards').html('<div style="text-align: center; color: white;">' +
+                            '<h3>' +
+                                'У вас нет ни одной карты' +
+                            '</h3>' +
+                        '</div>');
+        return;
+    }
+    
     // Получаем ссылку на таблицу
     var table = document.getElementById("cards_table");
-    
-    if(results.length === 0){
-        var row = table.insertRow();
-        
-        // Добавляем ячейки с данными в эту строку
-        var cell1 = row.insertCell(0);
-        cell1.innerHTML = "U have no cards";
-    }
 
     // Инициализируем переменные для отслеживания текущей строки и столбца
     var currentRow = 0;

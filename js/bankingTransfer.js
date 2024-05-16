@@ -91,15 +91,26 @@ function fieldsAreEmpty() {
     return fields_are_empty;
 }
 
+function signOut() {
+    $.ajax({
+        type: "post",
+        url: "/SignOut",
+        data: { },
+        success: function(response) {
+            if(response === '200') {
+                window.location.href = "/SignIn";
+            }
+        },
+        error: function(xhr, status, error) {
+            // Обработка ошибки
+            console.error(xhr.responseText);
+        }
+    });
+}
+
 // Функция для открытия модального окна
 function openModal(modalId) {
-    if(modalId === 'transferModal'){
-        var modal = document.getElementById(modalId);
-        modal.style.display = "block"; // Показываем модальное окно
-        return;
-    }
-
-    if(modalId === 'accountModal'){
+    if(modalId === 'transferModal' || modalId === 'accountModal' || modalId === 'successModal'){
         var modal = document.getElementById(modalId);
         modal.style.display = "block"; // Показываем модальное окно
         return;
@@ -118,30 +129,43 @@ function openModal(modalId) {
         // Отправляем запрос к базе данных
         $.ajax({
             type: 'GET',
-            url: '/getCommssionRule', // Путь к серверному обработчику запроса
-            data: { 
-                account_number: document.getElementById("select_card_number").value,
-                commission_type: 'banking'
-            },
-            success: function (response) {
-                let transfer_amount = parseFloat(document.getElementById("transfer_amount").value);
-
+            url: '/getBankingName',
+            data: { banking_id: document.getElementById('operation_code').value },
+            success: function (res) {
+                console.log(res);
+                switch (res) {
+                    case '404' : {
+                        console.log(res);
+                        document.getElementById('transfer_condition').textContent = 'Услуги с указанным кодом не найдено!';
+                        openModal('successModal');
+                        return;
+                    }
+                    case '500' : {
+                        ocument.getElementById('transfer_condition').textContent = 'Ошибка выполнения запроса!';
+                        openModal('successModal');
+                        return;
+                    }
+                }
                 $.ajax({
                     type: 'GET',
-                    url: '/getBankingName',
-                    data: { banking_id: document.getElementById('operation_code').value },
-                    success: function (res) {
+                    url: '/getCommssionRule', // Путь к серверному обработчику запроса
+                    data: { 
+                        account_number: document.getElementById("select_card_number").value,
+                        commission_type: 'banking'
+                    },
+                    success: function (response) {
+                        let transfer_amount = parseFloat(document.getElementById("transfer_amount").value);
                         response.forEach(function (value) {
                             if (transfer_amount >= parseFloat(value.from_amount) && transfer_amount <= parseFloat(value.to_amount)) {
                                 transfer_currency = value.currency;
                                 commission = parseFloat((transfer_amount * (parseInt(value.percent) / 100)).toFixed(2));
                                 document.getElementById("commission_message").textContent = "Комиссия: " + commission + " " + transfer_currency;
-
+        
                                 total_transfer_amount = (transfer_amount - commission).toFixed(2);
                                 document.getElementById("total_amount").textContent = "Итого к отправке: " + total_transfer_amount + " " + transfer_currency;
-
+        
                                 document.getElementById('banking_name').textContent = "Оплачиваемая услуга: " + res;
-
+        
                                 var modal = document.getElementById(modalId);
                                 modal.style.display = "block"; // Показываем модальное окно
                                 return;
