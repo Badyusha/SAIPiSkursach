@@ -1,0 +1,80 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sigma-bank</title>
+
+    <link href="../css/style.css" type="text/css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="../controllers/employeeHomePage.js" type="text/javascript"></script>
+    <script src="../js/server.js" type="text/javascript"></script>
+</head>
+<body>
+    <header>
+        <img src="../images/btc-icon.webp">
+        <h2>SIGMA-BANK</h2>
+    </header>
+
+    <div id="menu">
+        <form id="employee_actions">
+            <table id="choose_client">
+                <tr>
+                    <td>
+                        <label id="choose_client_label">Выберите клиента</label>
+                    </td>
+                    <td>
+                        <select id="clients_dropdown">
+
+                        </select>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" id="create_account" value="Открыть счет">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" id="create_card" value="Оформить карту">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" id="top_up_account" value="Пополнить счет">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <input type="button" id="payments_history" value="Просмотреть историю платежей">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <button id="clear_employee_options_button" onclick="closeEmployeeOptions()">Очистить форму</button>
+                    </td>
+                </tr>
+            </table>
+        </form>
+
+        <form id="employee_options">
+            
+        </form>
+    </div>
+
+    <!-- Модальное окно для отображения статуса -->
+    <div id="successModal" class="modal">
+        <div class="modal-content" style="text-align: center;">
+            <span class="close" onclick="closeModal('successModal')">&times;</span>
+            <h2>Состояние операции</h2>
+            <h3 id="transfer_condition"></h3>
+        </div>
+    </div>
+
+    <footer>
+        <a href="https://github.com/Badyusha">
+            <img src="../images/github.png" height="35px" width="35px">
+        </a>
+    </footer>
+</body> 
+</html>

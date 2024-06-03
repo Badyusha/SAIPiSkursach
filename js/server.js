@@ -21,7 +21,7 @@ app.use(session({
 app.use(express.urlencoded({ extended: true }));
 
 // Указываем Express использовать папки для раздачи статических файлов
-app.use(express.static(path.join(__dirname, '..', 'html')));
+app.use(express.static(path.join(__dirname, '..', 'views')));
 app.use(express.static(path.join(__dirname, '..', 'css')));
 app.use(express.static(path.join(__dirname, '..', 'js')));
 app.use(express.static(path.join(__dirname, '..', 'images')));
@@ -30,6 +30,7 @@ app.use(express.static(path.join(__dirname, '..', 'images')));
 // Указываем Express правильные типы MIME для файлов CSS и JavaScript
 app.use('/css', express.static(path.join(__dirname, '..', 'css'), { 'Content-Type': 'text/css' }));
 app.use('/js', express.static(path.join(__dirname, '..', 'js'), { 'Content-Type': 'application/javascript' }));
+app.use('/controllers', express.static(path.join(__dirname, '..', 'controllers'), { 'Content-Type': 'application/javascript' }));
 app.use('/images', express.static(path.join(__dirname, '..', 'images'), { 'Content-Type': 'image/png' }));
 
 app.set('view engine', 'ejs');
@@ -137,11 +138,15 @@ function customHash(str) {
 
 // Маршрут для отображения страниц
 app.get('/SignIn', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'html', 'SignIn.html'));
+    res.sendFile(path.join(__dirname, '..', 'views', 'SignIn.html'));
+});
+
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '..', 'views', 'SignIn.html'));
 });
 
 app.get('/SignUp', (req, res) => {
-    res.sendFile(path.join(__dirname, '..', 'html', 'SignUp.html'));
+    res.sendFile(path.join(__dirname, '..', 'views', 'SignUp.html'));
 });
 
 // Обработчик GET запроса для страницы ClientHomePage
@@ -153,7 +158,7 @@ app.get('/ClientHomePage', (req, res) => {
     // Проверяем, авторизован ли пользователь
     if (req.session.username) {
         // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
-        res.sendFile(path.join(__dirname, '..', 'html', 'ClientHomePage.html'));
+        res.sendFile(path.join(__dirname, '..', 'views', 'ClientHomePage.html'));
     } else {
         // Если пользователь не авторизован, перенаправляем на страницу входа
         res.redirect('/SignIn');
@@ -169,7 +174,7 @@ app.get('/TransferToBankClient', (req, res) => {
     // Проверяем, авторизован ли пользователь
     if (req.session.username) {
         // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
-        res.sendFile(path.join(__dirname, '..', 'html', 'TransferToBankClient.html'));
+        res.sendFile(path.join(__dirname, '..', 'views', 'TransferToBankClient.html'));
     } else {
         // Если пользователь не авторизован, перенаправляем на страницу входа
         res.redirect('/SignIn');
@@ -184,8 +189,8 @@ app.get('/TransferByAccountNumber', (req, res) => {
     // Проверяем, авторизован ли пользователь
     if (req.session.username) {
         // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
-        // res.sendFile(path.join(__dirname, '..', 'html', '.html'));
-        res.sendFile(path.join(__dirname, '..', 'html', 'TransferByAccountNumber.html'));
+        // res.sendFile(path.join(__dirname, '..', 'views', '.html'));
+        res.sendFile(path.join(__dirname, '..', 'views', 'TransferByAccountNumber.html'));
     } else {
         // Если пользователь не авторизован, перенаправляем на страницу входа
         res.redirect('/SignIn');
@@ -200,7 +205,7 @@ app.get('/BankingTransfer', (req, res) => {
     // Проверяем, авторизован ли пользователь
     if (req.session.username) {
         // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
-        res.sendFile(path.join(__dirname, '..', 'html', 'BankingTransfer.html'));
+        res.sendFile(path.join(__dirname, '..', 'views', 'BankingTransfer.html'));
     } else {
         // Если пользователь не авторизован, перенаправляем на страницу входа
         res.redirect('/SignIn');
@@ -215,7 +220,7 @@ app.get('/EmployeeHomePage', (req, res) => {
     // Проверяем, авторизован ли пользователь
     if (req.session.username) {
         // Если пользователь авторизован, отправляем HTML код страницы с логином пользователя
-        res.sendFile(path.join(__dirname, '..', 'html', 'EmployeeHomePage.html'));
+        res.sendFile(path.join(__dirname, '..', 'views', 'EmployeeHomePage.html'));
     } else {
         // Если пользователь не авторизован, перенаправляем на страницу входа
         res.redirect('/SignIn');

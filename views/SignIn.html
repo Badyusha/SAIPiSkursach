@@ -1,0 +1,39 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sigma-bank</title>
+
+    <link href="../css/style.css" type="text/css" rel="stylesheet">
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <form id="signin_form" method="post">
+        <h1>Вход</h1>
+
+        <input
+            type="text"
+            id="username"
+            name="username"
+            placeholder="Имя пользователя"
+        />
+
+        <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Пароль"
+            autocomplete="new-password"
+        />
+
+        <label id="error"></label>
+
+        <input id="authorize_button" type="button" value="Войти"/><br>
+        
+        <a href="/SignUp" class="href">Зарегистрироваться</a>
+    </form>
+    <script src="../controllers/authorization.js" type="text/javascript"></script>
+
+</body>
+</html>
